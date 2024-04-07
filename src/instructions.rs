@@ -23,20 +23,20 @@ pub enum Instructions {
     Ldbc,
 }
 
-pub fn process(mut cpu: CPU, instructions: Instructions) {
+pub fn process(cpu: &mut CPU, instructions: Instructions) {
     match instructions {
         Instructions::Nop{..} => {
-            println!("NOP {0}", NOP.opcode)
+            println!("NOP {0}\n", NOP.opcode);
         },
         Instructions::Ldbb{..} => {
             cpu.b = cpu.b;
 
-            println!("LDBB {0} | B: {1} -> B: {2}", LDBB.opcode, cpu.b, cpu.b);
+            println!("LDBB {0} | B: {1} -> B: {2}\n", LDBB.opcode, cpu.b, cpu.b);
         },
         Instructions::Ldbc{..} => {
             cpu.b = cpu.c;
         
-            println!("LDBC {0} | C: {1} -> B: {2}", LDBC.opcode, cpu.c, cpu.b);
+            println!("LDBC {0} | C: {1} -> B: {2}\n", LDBC.opcode, cpu.c, cpu.b);
         },
     }
 }

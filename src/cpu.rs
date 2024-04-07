@@ -1,3 +1,5 @@
+use crate::{Instructions, process};
+
 macro_rules! pub_struct {
     ($name:ident {$($field:ident: $t:ty,)*}) => {
         #[derive(Debug, Clone, PartialEq)]
@@ -33,5 +35,22 @@ impl Default for CPU {
             sp: 0,
             pc: 0,
         }
+    }
+}
+
+pub fn run(mut cpu: CPU, ram: Vec<u8>) {
+    for instruction in ram.iter() {
+        println!("PC: {}", cpu.pc);
+
+        let instructions: Instructions;
+        match instruction {
+            0 => instructions = Instructions::Nop,
+            40 => instructions = Instructions::Ldbb,
+            41 => instructions = Instructions::Ldbc,
+            _ => panic!("Instruction not supported."),
+        }
+
+        process(&mut cpu, instructions);
+        cpu.pc += 1;
     }
 }

@@ -1,14 +1,22 @@
 mod instructions;
 mod cpu;
 
-use cpu::CPU;
+use std::env;
+use std::fs;
+
+use cpu::{CPU, run};
 use instructions::{Instructions, process};
 
 fn main() {
-    #[allow(unused)]
-    let mut cpu: CPU = CPU { c: 5, ..Default::default() };
+    let cpu: CPU = CPU { c: 69, ..Default::default() };
 
-    let instruction: Instructions = Instructions::Ldbc; //Moves 5 which is in C register to B register which is 0
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        panic!("File not specified.");
+    }
 
-    process(cpu, instruction);
+    let ram: Vec<u8> = fs::read(&args[1])
+        .expect("Not able to read file.");
+
+    run(cpu, ram);
 }
