@@ -1,4 +1,4 @@
-use crate::{AddressMode, Instruction, process};
+use crate::{AddressMode, Instruction, match_instruction, process};
 
 //Macro for making all struct fields public.
 macro_rules! pub_struct {
@@ -39,45 +39,16 @@ impl Default for CPU {
 }
 
 pub fn run(mut cpu: CPU, ram: Vec<u8>) {
-    let mut address_mode: AddressMode;
-    let mut instruction: Instruction;
+    #[allow(unused_assignments)]
     let mut operand: Option<u8> = None;
 
     for (index, i) in ram.iter().enumerate() {
         let x: usize = cpu.pc as usize;
 
         if index != x { continue; }
-
         println!("PC: {}", x);
 
-        match i {
-            0 => {
-                address_mode = AddressMode::Implied;
-                instruction = Instruction::Nop;
-            },
-            40 => {
-                address_mode = AddressMode::Register;
-                instruction = Instruction::Ldbb;
-            },
-            41 => {
-                address_mode = AddressMode::Register;
-                instruction = Instruction::Ldbc;
-            },
-            62 => {
-                address_mode = AddressMode::Immediate;
-                instruction = Instruction::Ldan;
-            },
-            06 => {
-                address_mode = AddressMode::Immediate;
-                instruction = Instruction::Ldbn;
-            },
-            14 => {
-                address_mode = AddressMode::Immediate;
-                instruction = Instruction::Ldcn;
-            },
-            _ => panic!("Instruction not supported. {}", ram[x]),
-        }
-
+        let (instruction, address_mode): (Instruction, AddressMode) = match_instruction(i);
         match address_mode {
             AddressMode::Immediate => { 
                 operand = Some(ram[x + 1]);
