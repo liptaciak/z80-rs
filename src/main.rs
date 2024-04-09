@@ -1,13 +1,11 @@
 mod cpu;
 mod instructions;
-mod interp;
 
 use std::env;
 use std::fs;
 
 use cpu::{CPU, run};
-use instructions::{AddressMode, Instruction, process};
-use interp::match_instruction;
+use instructions::{AddressMode, Instruction, match_instruction, process};
 
 fn main() {
     let cpu: CPU = CPU { ..Default::default() };

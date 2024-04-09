@@ -21,6 +21,18 @@ pub enum Instruction {
     Ldln,
 }
 
+pub fn match_instruction(i: &u8) -> (Instruction, AddressMode) {
+    match i {
+        0 => {( Instruction::Nop, AddressMode::Implied )},
+        40 => {( Instruction::Ldbb, AddressMode::Register )},
+        41 => {( Instruction::Ldbc, AddressMode::Register )},
+        62 => {( Instruction::Ldan, AddressMode::Immediate )},
+        06 => {( Instruction::Ldbn, AddressMode::Immediate )},
+        14 => {( Instruction::Ldcn, AddressMode::Immediate )},
+        _ => panic!("Instruction {} not supported.", i),
+    }
+}
+
 pub fn process(cpu: &mut CPU, instruction: Instruction, operand: Option<u8>) {
     match instruction {
         Instruction::Nop => {
