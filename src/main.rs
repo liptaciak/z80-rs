@@ -5,10 +5,10 @@ use std::env;
 use std::fs;
 
 use cpu::{CPU, run};
-use instructions::{Instructions, process};
+use instructions::{AddressMode, Instruction, process};
 
 fn main() {
-    let cpu: CPU = CPU { c: 69, ..Default::default() };
+    let cpu: CPU = CPU { ..Default::default() };
 
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {

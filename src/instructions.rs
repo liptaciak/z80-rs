@@ -1,42 +1,56 @@
 use crate::CPU;
 
 #[allow(dead_code)]
-enum AddressMode {
-    IMPLIED,
-    ADDRESING,
+pub enum AddressMode {
+    Implied,
+    Register,
+    Immediate,
 }
 
 #[allow(dead_code)]
-pub struct Instruction {
-    opcode: u8,
-    address_mode: AddressMode,
-}
-
-pub const NOP: Instruction = Instruction { opcode: 00, address_mode: AddressMode::IMPLIED };
-pub const LDBB: Instruction = Instruction { opcode: 40, address_mode: AddressMode::ADDRESING };
-pub const LDBC: Instruction = Instruction { opcode: 41, address_mode: AddressMode::ADDRESING };
-
-#[allow(dead_code)]
-pub enum Instructions {
+pub enum Instruction {
     Nop,
     Ldbb,
     Ldbc,
+    Ldan,
+    Ldbn,
+    Ldcn,
+    Lddn,
+    Lden,
+    Ldhn,
+    Ldln,
 }
 
-pub fn process(cpu: &mut CPU, instructions: Instructions) {
-    match instructions {
-        Instructions::Nop{..} => {
-            println!("NOP {0}\n", NOP.opcode);
+pub fn process(cpu: &mut CPU, instruction: Instruction, operand: Option<u8>) {
+    match instruction {
+        Instruction::Nop => {
+            println!("NOP 00\n");
         },
-        Instructions::Ldbb{..} => {
+        Instruction::Ldbb => {
             cpu.b = cpu.b;
 
-            println!("LDBB {0} | B: {1} -> B: {2}\n", LDBB.opcode, cpu.b, cpu.b);
+            println!("LDBB 28 | B: {0} -> B: {1}\n", cpu.b, cpu.b);
         },
-        Instructions::Ldbc{..} => {
+        Instruction::Ldbc => {
             cpu.b = cpu.c;
         
-            println!("LDBC {0} | C: {1} -> B: {2}\n", LDBC.opcode, cpu.c, cpu.b);
+            println!("LDBC 29 | C: {0} -> B: {1}\n", cpu.c, cpu.b);
         },
+        Instruction::Ldan => {
+            cpu.a = operand.unwrap();
+
+            println!("LDAN 3E | N: {0} -> A: {1}\n", operand.unwrap(), cpu.a);
+        },
+        Instruction::Ldbn => {
+            cpu.b = operand.unwrap();
+
+            println!("LDBN 06 | N: {0} -> B: {1}\n", operand.unwrap(), cpu.b);
+        },
+        Instruction::Ldcn => {
+            cpu.c = operand.unwrap();
+
+            println!{"LDCN OE | N: {0} -> C: {1}\n", operand.unwrap(), cpu.c};
+        },
+        _ => println!("Instruction not implemented."),
     }
 }

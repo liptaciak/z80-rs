@@ -1,5 +1,6 @@
-use crate::{Instructions, process};
+use crate::{AddressMode, Instruction, process};
 
+//Macro for making all struct fields public.
 macro_rules! pub_struct {
     ($name:ident {$($field:ident: $t:ty,)*}) => {
         #[derive(Debug, Clone, PartialEq)]
@@ -9,7 +10,6 @@ macro_rules! pub_struct {
     }
 }
 
-//Z80 Processor registers
 pub_struct!(CPU {
     a: u8, f: u8,
     b: u8, c: u8,
@@ -39,18 +39,54 @@ impl Default for CPU {
 }
 
 pub fn run(mut cpu: CPU, ram: Vec<u8>) {
-    for instruction in ram.iter() {
-        println!("PC: {}", cpu.pc);
+    let mut address_mode: AddressMode;
+    let mut instruction: Instruction;
+    let mut operand: Option<u8> = None;
 
-        let instructions: Instructions;
-        match instruction {
-            0 => instructions = Instructions::Nop,
-            40 => instructions = Instructions::Ldbb,
-            41 => instructions = Instructions::Ldbc,
-            _ => panic!("Instruction not supported."),
+    for (index, i) in ram.iter().enumerate() {
+        let x: usize = cpu.pc as usize;
+
+        if index != x { continue; }
+
+        println!("PC: {}", x);
+
+        match i {
+            0 => {
+                address_mode = AddressMode::Implied;
+                instruction = Instruction::Nop;
+            },
+            40 => {
+                address_mode = AddressMode::Register;
+                instruction = Instruction::Ldbb;
+            },
+            41 => {
+                address_mode = AddressMode::Register;
+                instruction = Instruction::Ldbc;
+            },
+            62 => {
+                address_mode = AddressMode::Immediate;
+                instruction = Instruction::Ldan;
+            },
+            06 => {
+                address_mode = AddressMode::Immediate;
+                instruction = Instruction::Ldbn;
+            },
+            14 => {
+                address_mode = AddressMode::Immediate;
+                instruction = Instruction::Ldcn;
+            },
+            _ => panic!("Instruction not supported. {}", ram[x]),
         }
 
-        process(&mut cpu, instructions);
+        match address_mode {
+            AddressMode::Immediate => { 
+                operand = Some(ram[x + 1]);
+                cpu.pc += 1;
+            },
+            _ => { }
+        }
+
+        process(&mut cpu, instruction, operand);
         cpu.pc += 1;
     }
 }
