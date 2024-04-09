@@ -51,6 +51,6 @@ pub fn process(cpu: &mut CPU, instruction: Instruction, operand: Option<u8>) {
 
             println!{"LDCN OE | N: {0} -> C: {1}\n", operand.unwrap(), cpu.c};
         },
-        _ => println!("Instruction not implemented."),
+        _ => panic!("Instruction not implemented."),
     }
 }
