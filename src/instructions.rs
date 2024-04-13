@@ -1,11 +1,4 @@
-use crate::CPU;
-
-#[allow(dead_code)]
-pub enum AddressMode {
-    Implied,
-    Register,
-    Immediate,
-}
+use crate::{CPU, AddressMode};
 
 #[allow(dead_code)]
 pub enum Instruction {

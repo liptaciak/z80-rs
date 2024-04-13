@@ -1,4 +1,4 @@
-use crate::{AddressMode, Instruction, match_instruction, process};
+use crate::{Instruction, match_instruction, process};
 
 //Macro for making all struct fields public.
 macro_rules! pub_struct {
@@ -36,6 +36,13 @@ impl Default for CPU {
             pc: 0,
         }
     }
+}
+
+#[allow(dead_code)]
+pub enum AddressMode {
+    Implied,
+    Register,
+    Immediate,
 }
 
 pub fn run(mut cpu: CPU, ram: Vec<u8>) {

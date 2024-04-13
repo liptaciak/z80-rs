@@ -4,8 +4,8 @@ mod instructions;
 use std::env;
 use std::fs;
 
-use cpu::{CPU, run};
-use instructions::{AddressMode, Instruction, match_instruction, process};
+use cpu::{CPU, AddressMode, run};
+use instructions::{Instruction, match_instruction, process};
 
 fn main() {
     let cpu: CPU = CPU { ..Default::default() };
