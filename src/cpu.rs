@@ -45,7 +45,7 @@ pub enum AddressMode {
     Immediate,
 }
 
-pub fn run(mut cpu: CPU, ram: Vec<u8>) {
+pub fn run(cpu: mut CPU, ram: Vec<u8>) {
     #[allow(unused_assignments)]
     let mut operand: Option<u8> = None;
 
