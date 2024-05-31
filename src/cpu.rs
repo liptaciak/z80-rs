@@ -22,6 +22,14 @@ pub_struct!(CPU {
     pc: u16,
 });
 
+#[allow(dead_code)]
+pub enum RegisterPair {
+    AF,
+    BC,
+    DE,
+    HL,
+}
+
 impl Default for CPU {
     fn default() -> CPU {
         CPU {
@@ -43,13 +51,44 @@ pub enum AddressMode {
     Implied,
     Register,
     Immediate,
+    ImmediateExtended,
+}
+
+impl CPU {
+    pub fn get_pair(&self, pair: RegisterPair) -> u16 {
+        match pair {
+            RegisterPair::AF => ((self.a as u16) << 8) | (self.f as u16),
+            RegisterPair::BC => ((self.b as u16) << 8) | (self.c as u16),
+            RegisterPair::DE => ((self.d as u16) << 8) | (self.e as u16),
+            RegisterPair::HL => ((self.h as u16) << 8) | (self.l as u16),
+        }
+    }
+
+    pub fn set_pair(&mut self, pair: RegisterPair, value: u16) {
+        match pair {
+            RegisterPair::AF => {
+                self.a = (value >> 8) as u8;
+                self.f = value as u8;
+            },
+            RegisterPair::BC => {
+                self.b = (value >> 8) as u8;
+                self.c = value as u8;
+            },
+            RegisterPair::DE => {
+                self.d = (value >> 8) as u8;
+                self.e = value as u8;
+            },
+            RegisterPair::HL => {
+                self.h = (value >> 8) as u8;
+                self.l = value as u8;
+            },
+        }
+    }
 }
 
 pub fn run(mut cpu: CPU, ram: Vec<u8>) {
-    #[allow(unused_assignments)]
-    let mut operand: Option<u8> = None;
-
     for (index, i) in ram.iter().enumerate() {
+        let mut operand: Vec<u8> = Vec::new();
         let x: usize = cpu.pc as usize;
 
         if index != x { continue; }
@@ -58,8 +97,13 @@ pub fn run(mut cpu: CPU, ram: Vec<u8>) {
         let (instruction, address_mode): (Instruction, AddressMode) = match_instruction(i);
         match address_mode {
             AddressMode::Immediate => { 
-                operand = Some(ram[x + 1]);
+                operand.push(ram[x + 1]);
                 cpu.pc += 1;
+            },
+            AddressMode::ImmediateExtended => {
+                operand.push(ram[x + 1]);
+                operand.push(ram[x + 2]);
+                cpu.pc += 2;
             },
             _ => { }
         }

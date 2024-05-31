@@ -4,7 +4,7 @@ mod instructions;
 use std::env;
 use std::fs;
 
-use cpu::{CPU, AddressMode, run};
+use cpu::{CPU, RegisterPair, AddressMode, run};
 use instructions::{Instruction, match_instruction, process};
 
 fn main() {
