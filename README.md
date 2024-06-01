@@ -1,7 +1,9 @@
 # z80
 Z80 Emulator written in Rust :crab:
 
+
 First, generate binary file using Assembler. For example:
+
 Using [Sjasmplus](https://github.com/z00m128/sjasmplus):
 
 #### **`z80.asm`**
