@@ -35,6 +35,7 @@ pub enum AddressMode {
     None,
     Implied,
     Register,
+    Extended,
     Immediate,
     ImmediateExtended,
 }
@@ -77,12 +78,10 @@ impl CPU {
             match address_mode {
                 AddressMode::Immediate => { 
                     operand.push(ram[counter + 1]);
-                    self.pc += 1;
                 },
-                AddressMode::ImmediateExtended => {
+                AddressMode::ImmediateExtended | AddressMode::Extended => {
                     operand.push(ram[counter + 1]);
                     operand.push(ram[counter + 2]);
-                    self.pc += 2;
                 },
                 _ => { }
             }
