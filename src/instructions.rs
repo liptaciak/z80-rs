@@ -76,10 +76,11 @@ pub fn process(cpu: &mut CPU, instruction: Instruction, operand: Vec<u8>) {
                 println!("PC: {}", cpu.pc);
 
                 cpu.b -= 1;
-                cpu.pc += 1;
 
                 println!("DEC B | 0x05 | B: {0}\n", cpu.b);
             }
+
+            cpu.pc += 1;
         },
         Instruction::LDBN => {
             println!("PC: {}", cpu.pc);
