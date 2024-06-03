@@ -1,39 +1,23 @@
 use crate::{match_instruction, process};
-
-//Macro for making all struct fields public.
-macro_rules! pub_struct {
-    ($name:ident {$($field:ident: $t:ty,)*}) => {
-        #[derive(Default, Debug, Clone, PartialEq)]
-        pub struct $name {
-            $(pub $field: $t),*
-        }
-    }
+#[derive(Default)]
+pub struct CPU {
+    pub a: u8, pub f: u8,
+    pub b: u8, pub c: u8,
+    pub d: u8, pub e: u8,
+    pub h: u8, pub l: u8,
+    pub i: u8, pub r: u8,
+    pub ix: u16, 
+    pub iy: u16,
+    pub sp: u16,
+    pub pc: u16,
 }
 
-
-pub_struct!(CPU {
-    a: u8, f: u8,
-    b: u8, c: u8,
-    d: u8, e: u8,
-    h: u8, l: u8,
-    i: u8, r: u8,
-    ix: u16, 
-    iy: u16,
-    sp: u16,
-    pc: u16,
-});
-
-#[allow(dead_code)]
 pub enum RegisterPair {
-    BC,
-    DE,
-    HL,
+    BC, DE, HL,
 }
 
-#[allow(dead_code)]
 pub enum AddressMode {
     None,
-    Implied,
     Register,
     Extended,
     Immediate,
@@ -68,27 +52,24 @@ impl CPU {
 
     pub fn run(mut self, ram: Vec<u8>) {
         loop {
-            let counter: usize = self.pc as usize;
-            println!("PC: {}", counter);
-
-            let i: u8 = ram[counter];
+            let instr: u8 = ram[self.pc as usize];
             let mut operand: Vec<u8> = Vec::new();
     
-            let (instruction, address_mode) = match_instruction(i);
+            let (instruction, address_mode) = match_instruction(instr);
             match address_mode {
                 AddressMode::Immediate => { 
-                    operand.push(ram[counter + 1]);
+                    operand.push(ram[self.pc as usize + 1]);
                 },
                 AddressMode::ImmediateExtended | AddressMode::Extended => {
-                    operand.push(ram[counter + 1]);
-                    operand.push(ram[counter + 2]);
+                    operand.push(ram[self.pc as usize + 1]);
+                    operand.push(ram[self.pc as usize + 2]);
                 },
                 _ => { }
             }
     
             process(&mut self, instruction, operand);
 
-            if counter > u16::MAX as usize { self.pc = 0x0000; }
+            if self.pc > u16::MAX { self.pc = 0x0000; }
         }
     }
 }
