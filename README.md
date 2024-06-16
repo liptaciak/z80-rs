@@ -35,3 +35,9 @@ Generate binary file:
 and run the emulator using:
 
 `z80 z80.bin`
+
+# todo
+- [ ] IN, OUT
+- [ ] Clock
+- [ ] Flags
+      
