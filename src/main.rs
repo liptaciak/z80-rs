@@ -31,6 +31,10 @@ fn main() {
             ram.push(opcode);
         }
     }
+    
+    unsafe {
+        ram.set_len(0x10000);
+    }
 
     cpu.run(ram);
 }

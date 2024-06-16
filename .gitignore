@@ -1,5 +1,6 @@
 z80.asm
 z80.bin
+os.bin
 
 .idea/
 

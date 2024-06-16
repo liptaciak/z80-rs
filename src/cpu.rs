@@ -1,4 +1,5 @@
 use crate::{match_instruction, process};
+
 #[derive(Default)]
 pub struct CPU {
     pub a: u8, pub f: u8,
@@ -50,7 +51,7 @@ impl CPU {
         }
     }
 
-    pub fn run(mut self, ram: Vec<u8>) {
+    pub fn run(mut self, mut ram: Vec<u8>) {
         loop {
             let instr: u8 = ram[self.pc as usize];
             let mut operand: Vec<u8> = Vec::new();
@@ -67,7 +68,7 @@ impl CPU {
                 _ => { }
             }
     
-            process(&mut self, instruction, operand);
+            process(&mut self, &mut ram, instruction, operand);
 
             if self.pc > u16::MAX { self.pc = 0x0000; }
         }
