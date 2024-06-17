@@ -11,8 +11,10 @@ pub enum Instruction {
     LDDENN,
     LDHLNN,
     LDNNHL,
+    INCHL,
     JRZD,
     LDSPNN,
+    LDHLN,
     LDBC,
     LDAN,
     LDBA,
@@ -20,6 +22,8 @@ pub enum Instruction {
     CPB,
     JPNN,
     ADDAN,
+    RET,
+    CALLNN,
     OUTNA,
     SUBN,
     DI,
@@ -35,14 +39,18 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
         0x11 => {( Instruction::LDDENN, AddressMode::ImmediateExtended )},
         0x21 => {( Instruction::LDHLNN, AddressMode::ImmediateExtended )},
         0x22 => {( Instruction::LDNNHL, AddressMode::Extended )},
+        0x23 => {( Instruction::INCHL, AddressMode::Register )},
         0x28 => {( Instruction::JRZD, AddressMode::Immediate )},
         0x31 => {( Instruction::LDSPNN, AddressMode::Extended )},
+        0x36 => {( Instruction::LDHLN, AddressMode::Immediate )},
         0x3E => {( Instruction::LDAN, AddressMode::Immediate )},
         0x47 => {( Instruction::LDBA, AddressMode::Register )},
         0x76 => {( Instruction::HALT, AddressMode::None )},
         0xB8 => {( Instruction::CPB, AddressMode::Register )},
         0xC3 => {( Instruction::JPNN, AddressMode::Extended )},
         0xC6 => {( Instruction::ADDAN, AddressMode::Immediate )},
+        0xC9 => {( Instruction::RET, AddressMode::None )},
+        0xCD => {( Instruction::CALLNN, AddressMode::Extended )},
         0xD3 => {( Instruction::OUTNA, AddressMode::Immediate )},
         0xD6 => {( Instruction::SUBN, AddressMode::Immediate )},
         0xF3 => {( Instruction::DI, AddressMode::None )},
@@ -132,6 +140,14 @@ pub fn process(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, opera
 
             println!("LD (NN), HL | 0x22 | HL: {0} -> NN: {1}", cpu.get_pair(RegisterPair::HL), result)
         },
+        Instruction::INCHL => {
+            print!("PC: {} | ", cpu.pc);
+
+            cpu.set_pair(RegisterPair::HL, cpu.get_pair(RegisterPair::HL) + 1);
+            cpu.pc += 1;
+
+            println!("INC HL | 0x23 | HL: {0}", cpu.get_pair(RegisterPair::HL));
+        },
         Instruction::JRZD => {
             if cpu.f == 0b01000010 {
                 print!("PC: {} | ", cpu.pc);
@@ -151,6 +167,15 @@ pub fn process(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, opera
             cpu.pc += 3;
 
             println!("LD SP, NN | 0x31 | NN: {0} -> SP: {1}", value, cpu.sp);
+        },
+        Instruction::LDHLN => {
+            print!("PC: {} | ", cpu.pc);
+
+            ram[cpu.get_pair(RegisterPair::HL) as usize] = operand[0];
+
+            cpu.pc += 2;
+
+            println!("LD (HL), N | 0x36 | N: {0} -> (HL): {1}", operand[0], cpu.get_pair(RegisterPair::HL))
         },
         Instruction::LDAN => {
             print!("PC: {} | ", cpu.pc);
@@ -207,6 +232,31 @@ pub fn process(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, opera
 
             cpu.a += operand[0];
             cpu.pc += 2;
+        },
+        Instruction::RET => {
+            print!("PC: {} | ", cpu.pc);
+        
+            let address: u16 = ((ram[(cpu.sp + 1) as usize] as u16) << 8) | (ram[cpu.sp as usize] as u16);
+            cpu.pc = address;
+        
+            cpu.sp += 2;
+        
+            println!("RET | 0xC9 | PC: {0}", address);
+        },
+        Instruction::CALLNN => {
+            print!("PC: {} | ", cpu.pc);
+        
+            cpu.pc += 3;
+        
+            ram[(cpu.sp - 1) as usize] = (cpu.pc >> 8) as u8;
+            ram[(cpu.sp - 2) as usize] = cpu.pc as u8;
+        
+            cpu.sp -= 2;
+        
+            let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
+            cpu.pc = address;
+        
+            println!("CALL NN | 0xCD | NN: {0} -> PC: {1}", address, cpu.pc);
         },
         Instruction::OUTNA => {
             print!("PC: {} | ", cpu.pc);
