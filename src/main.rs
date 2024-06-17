@@ -4,7 +4,7 @@ mod instructions;
 use std::fs;
 
 use cpu::{CPU, RegisterPair, AddressMode};
-use instructions::{match_instruction, process};
+use instructions::{match_instruction, process_instruction};
 
 use clap::{Arg, Command};
 

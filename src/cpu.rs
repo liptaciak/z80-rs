@@ -1,6 +1,7 @@
-use crate::{match_instruction, process};
+use crate::{match_instruction, process_instruction};
+use inline_colorization::*;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct CPU {
     pub a: u8, pub f: u8,
     pub b: u8, pub c: u8,
@@ -67,8 +68,34 @@ impl CPU {
                 },
                 _ => { }
             }
-    
-            process(&mut self, &mut ram, instruction, operand);
+            
+            let cpu_cloned: CPU = self.clone();
+            let result: String = process_instruction(&mut self, &mut ram, instruction, operand);
+
+            println!("{color_cyan} {}", result);
+
+            print!("{color_white} A: {:#04X} -> {:#04X} |", cpu_cloned.a, self.a);
+            println!("{color_white} F: {:#04X} -> {:#04X}", cpu_cloned.f, self.f);
+
+            print!("{color_white} B: {:#04X} -> {:#04X} |", cpu_cloned.b, self.b);
+            println!("{color_white} C: {:#04X} -> {:#04X}", cpu_cloned.c, self.c);
+
+            print!("{color_white} D: {:#04X} -> {:#04X} |", cpu_cloned.d, self.d);
+            println!("{color_white} E: {:#04X} -> {:#04X}", cpu_cloned.e, self.e);
+
+            print!("{color_white} H: {:#04X} -> {:#04X} |", cpu_cloned.h, self.h);
+            println!("{color_white} L: {:#04X} -> {:#04X}", cpu_cloned.l, self.l);
+
+            print!("{color_white} I: {:#04X} -> {:#04X} |", cpu_cloned.i, self.i);
+            println!("{color_white} R: {:#04X} -> {:#04X}", cpu_cloned.r, self.r);
+
+            println!("{color_white} IX: {:#06X} -> {:#06X}", cpu_cloned.ix, self.ix);
+            println!("{color_white} IY: {:#06X} -> {:#06X}\n", cpu_cloned.iy, self.iy);
+
+            println!("{color_white} SP: {:#06X} -> {:#06X}", cpu_cloned.sp, self.sp);
+            println!("{color_white} PC: {:#06X} -> {:#06X}", cpu_cloned.pc, self.pc);
+
+            println!("{color_reset}{style_reset}\n");
 
             if self.pc > u16::MAX { self.pc = 0x0000; }
         }

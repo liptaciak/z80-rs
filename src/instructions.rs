@@ -59,151 +59,118 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
 }
 
 //TODO: Add flags.
-pub fn process(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) {
+pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) -> String {
     match instruction {
         Instruction::NOP => {
-            print!("PC: {} | ", cpu.pc);
-            println!("NOP | 0x00");
-
             cpu.pc += 1;
+
+            return String::from("NOP 0x00");
         },
         Instruction::LDBCNN => {
-            print!("PC: {} | ", cpu.pc);
-
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::BC, value);
 
             cpu.pc += 3;
 
-            println!("LD BC, NN | 0x01 | NN: {0} -> BC: {1}", value, cpu.get_pair(RegisterPair::BC));
+            return String::from("LD BC, NN 0x01");
         },
         Instruction::INCB => {
-            print!("PC: {} | ", cpu.pc);
-
             cpu.b += 1;
             cpu.pc += 1;
 
-            println!("INC B | 0x04 | B: {0}", cpu.b);
+            return String::from("INC B 0x04");
         },
         Instruction::DECB => {
             if cpu.b == 0 {
                 cpu.f = 0b10000010;
             } else {
-                print!("PC: {} | ", cpu.pc);
-
                 cpu.b -= 1;
-
-                println!("DEC B | 0x05 | B: {0}", cpu.b);
             }
 
             cpu.pc += 1;
+
+            return String::from("DEC B 0x05");
         },
         Instruction::LDBN => {
-            print!("PC: {} | ", cpu.pc);
-
             cpu.b = operand[0];
             cpu.pc += 2;
 
-            println!("LD B, N | 0x06 | N: {0} -> B: {1}", operand[0], cpu.b);
+            return String::from("LD B, N 0x06");
         },
         Instruction::LDDENN => {
-            print!("PC: {} | ", cpu.pc);
-
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::DE, value);
 
             cpu.pc += 3;
 
-            println!("LD DE, NN | 0x11 | NN: {0} -> DE: {1}", value, cpu.get_pair(RegisterPair::DE));
+            return String::from("LD DE, NN 0x11");
         },
         Instruction::LDHLNN => {
-            print!("PC: {} | ", cpu.pc);
-
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::HL, value);
 
             cpu.pc += 3;
 
-            println!("LD HL, NN | 0x21 | NN: {0} -> HL: {1}", value, cpu.get_pair(RegisterPair::HL));
+            return String::from("LD HL, NN 0x21");
         },
         Instruction::LDNNHL => {
-            print!("PC: {} | ", cpu.pc);
-
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
 
             ram[value as usize] = cpu.l;
             ram[(value + 1) as usize] = cpu.h;
 
-            let result: u16 = ((ram[value as usize] as u16) << 8) | (ram[(value + 1) as usize] as u16);
-
             cpu.pc += 3;
 
-            println!("LD (NN), HL | 0x22 | HL: {0} -> NN: {1}", cpu.get_pair(RegisterPair::HL), result)
+            return String::from("LD (NN), HL 0x22");
         },
         Instruction::INCHL => {
-            print!("PC: {} | ", cpu.pc);
-
             cpu.set_pair(RegisterPair::HL, cpu.get_pair(RegisterPair::HL) + 1);
             cpu.pc += 1;
 
-            println!("INC HL | 0x23 | HL: {0}", cpu.get_pair(RegisterPair::HL));
+            return String::from("INC HL 0x23");
         },
         Instruction::JRZD => {
             if cpu.f == 0b01000010 {
-                print!("PC: {} | ", cpu.pc);
                 cpu.pc += operand[0] as u16 + 2;
-
-                println!("JR Z, D | 0x28 | D: {0} -> PC: {1}", operand[0], cpu.pc);
             } else {
                 cpu.pc += 2;
             }
+
+            return String::from("JR Z, D 0x28");
         },
-        Instruction::LDSPNN => {
-            print!("PC: {} | ", cpu.pc);
-            
+        Instruction::LDSPNN => {    
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.sp = value;
 
             cpu.pc += 3;
 
-            println!("LD SP, NN | 0x31 | NN: {0} -> SP: {1}", value, cpu.sp);
+            return String::from("LD SP, NN 0x31");
         },
         Instruction::LDHLN => {
-            print!("PC: {} | ", cpu.pc);
-
             ram[cpu.get_pair(RegisterPair::HL) as usize] = operand[0];
 
             cpu.pc += 2;
 
-            println!("LD (HL), N | 0x36 | N: {0} -> (HL): {1}", operand[0], cpu.get_pair(RegisterPair::HL))
+            return String::from("LD (HL), N 0x36");
         },
         Instruction::LDAN => {
-            print!("PC: {} | ", cpu.pc);
-
             cpu.a = operand[0];    
             cpu.pc += 2;
 
-            println!("LD A, N | 0x3E | N: {0} -> A: {1}", operand[0], cpu.a);
+            return String::from("LD A, N 0x3E");
         },
         Instruction::LDBA => {
-            print!("PC: {} | ", cpu.pc);
-
             cpu.b = cpu.a;
             cpu.pc += 1;
 
-            println!("LD B, A | 0x06 | A: {0} -> B: {1}", cpu.a, cpu.b);
+            return String::from("LD B, A 0x06");
         },
         Instruction::HALT => {
-            print!("PC: {} | ", cpu.pc);
-            println!("HALT | 0x76");
-
             cpu.pc += 1;
 
             loop { }; //Wait for interrupt (infinite loop)
         },
         Instruction::CPB => {
-            print!("PC: {} | ", cpu.pc);
-
             if cpu.b > cpu.a {
                 cpu.f = 0b10000010; //SN Flag
             } else {
@@ -216,36 +183,29 @@ pub fn process(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, opera
 
             cpu.pc += 1;
 
-            println!("CP B | 0xB8 | B: {0} - A: {1} -> F: {2}", cpu.b, cpu.a, cpu.f);
+            return String::from("CP B 0xB8");
         },
         Instruction::JPNN => {
-            print!("PC: {} | ", cpu.pc);
-
             let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.pc = address;
 
-            println!("JP NN | 0xC3 | NN: {0} -> PC: {1}", address, cpu.pc);
+            return String::from("JP NN 0xC3");
         },
         Instruction::ADDAN => {
-            print!("PC: {} | ", cpu.pc);
-            println!("ADD A, N | 0xC6 | A: {0} + N: {1}", cpu.a, operand[0]);
-
             cpu.a += operand[0];
             cpu.pc += 2;
+
+            return String::from("ADD A, N 0xC6");
         },
         Instruction::RET => {
-            print!("PC: {} | ", cpu.pc);
-        
             let address: u16 = ((ram[(cpu.sp + 1) as usize] as u16) << 8) | (ram[cpu.sp as usize] as u16);
             cpu.pc = address;
         
             cpu.sp += 2;
         
-            println!("RET | 0xC9 | PC: {0}", address);
+            return String::from("RET 0xC9");
         },
         Instruction::CALLNN => {
-            print!("PC: {} | ", cpu.pc);
-        
             cpu.pc += 3;
         
             ram[(cpu.sp - 1) as usize] = (cpu.pc >> 8) as u8;
@@ -256,32 +216,30 @@ pub fn process(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, opera
             let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.pc = address;
         
-            println!("CALL NN | 0xCD | NN: {0} -> PC: {1}", address, cpu.pc);
+            return String::from("CALL NN 0xCD");
         },
         Instruction::OUTNA => {
-            print!("PC: {} | ", cpu.pc);
-            println!("OUT N, A | 0xD3 | A: {0} -> N: {1}", cpu.a, operand[0]);
-
             //Write A to port N
             cpu.pc += 2;
+
+            return String::from("OUT N, A 0xD3");
         },
         Instruction::SUBN => {
             if cpu.a < operand[0] {
                 cpu.f = 0b10000010; //SN Flag
             } else {
-                print!("PC: {} | ", cpu.pc);
-                println!("SUB A, N | 0xD6 | A: {0} - N: {1}", cpu.a, operand[0]);
-                
                 cpu.a -= operand[0];
             }
 
             cpu.pc += 2;
+
+            return String::from("SUB A, N 0xD6");
         },
         Instruction::DI => {
-            print!("PC: {} | ", cpu.pc);
-            println!("DI | 0xF3"); //Prevent maskable interrupts from triggering.
-
+            //Prevent maskable interrupts from triggering
             cpu.pc += 1;
+
+            return String::from("DI 0xF3");
         },
 
         #[allow(unreachable_patterns)]
