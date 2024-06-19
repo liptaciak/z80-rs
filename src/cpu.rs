@@ -12,6 +12,7 @@ pub struct CPU {
     pub iy: u16,
     pub sp: u16,
     pub pc: u16,
+    pub halted: bool,
 }
 
 pub enum RegisterPair {
@@ -52,8 +53,18 @@ impl CPU {
         }
     }
 
+    pub fn set_flag(&mut self, position: u8, value: bool) {
+        if value {
+            self.f |= 1 << position;
+        } else {
+            self.f &= !(1 << position);
+        }
+    }
+
     pub fn run(mut self, mut ram: Vec<u8>) {
         loop {
+            if self.halted { continue; }
+
             let instr: u8 = ram[self.pc as usize];
             let mut operand: Vec<u8> = Vec::new();
     
@@ -75,7 +86,7 @@ impl CPU {
             println!("{color_cyan} {}", result);
 
             print!("{color_white} A: {:#04X} > {:#04X} |", cpu_cloned.a, self.a);
-            println!("{color_white} F: {:#04X} > {:#04X}", cpu_cloned.f, self.f);
+            println!("{color_white} F: {:#010b} > {:#010b}", cpu_cloned.f, self.f);
 
             print!("{color_white} B: {:#04X} > {:#04X} |", cpu_cloned.b, self.b);
             println!("{color_white} C: {:#04X} > {:#04X}", cpu_cloned.c, self.c);

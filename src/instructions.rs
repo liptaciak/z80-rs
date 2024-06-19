@@ -58,7 +58,6 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
     }
 }
 
-//TODO: Add flags.
 pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) -> String {
     match instruction {
         Instruction::NOP => {
@@ -75,12 +74,26 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             return String::from("LD BC, NN 0x01");
         },
         Instruction::INCB => {
+            cpu.set_flag(2, false);
+            if cpu.b == 0x7F { cpu.set_flag(2, true); } //P/V Flag
+
+            cpu.set_flag(4, false);
+            if (cpu.b & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
+
             cpu.b += 1;
             cpu.pc += 1;
 
+            cpu.set_flag(6, false);
+            if cpu.b == 0x00 { cpu.set_flag(6, true); } //Z Flag
+
+            cpu.set_flag(7, false);
+            if cpu.b > 0x7F { cpu.set_flag(7, true); } //S Flag
+
+            cpu.set_flag(1, false); //N Flag
+
             return String::from("INC B 0x04");
         },
-        Instruction::DECB => {
+        Instruction::DECB => { //FLAGS
             if cpu.b == 0 {
                 cpu.f = 0b10000010;
             } else {
@@ -123,13 +136,13 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("LD (NN), HL 0x22");
         },
-        Instruction::INCHL => {
+        Instruction::INCHL => { //FLAGS?
             cpu.set_pair(RegisterPair::HL, cpu.get_pair(RegisterPair::HL) + 1);
             cpu.pc += 1;
 
             return String::from("INC HL 0x23");
         },
-        Instruction::JRZD => {
+        Instruction::JRZD => { //FLAGS
             if cpu.f == 0b01000010 {
                 cpu.pc += operand[0] as u16 + 2;
             } else {
@@ -167,10 +180,11 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
         },
         Instruction::HALT => {
             cpu.pc += 1;
+            cpu.halted = true;
 
-            loop { }; //Wait for interrupt (infinite loop)
+            return String::from("HALT 0x76");
         },
-        Instruction::CPB => {
+        Instruction::CPB => { //FLAGS
             if cpu.b > cpu.a {
                 cpu.f = 0b10000010; //SN Flag
             } else {
@@ -191,7 +205,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("JP NN 0xC3");
         },
-        Instruction::ADDAN => {
+        Instruction::ADDAN => { //FLAGS
             cpu.a += operand[0];
             cpu.pc += 2;
 
@@ -224,7 +238,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("OUT N, A 0xD3");
         },
-        Instruction::SUBN => {
+        Instruction::SUBN => { //FLAGS
             if cpu.a < operand[0] {
                 cpu.f = 0b10000010; //SN Flag
             } else {
