@@ -35,3 +35,5 @@ Generate binary file:
 and run the emulator using:
 
 `z80 z80.bin`
+
+[![wakatime](https://wakatime.com/badge/user/dd4f6161-75ab-4bbe-889a-daf7004ac1f3/project/d4d9b7d2-21ca-4c0a-984b-97ec68f5dd46.svg?style=for-the-badge)](https://wakatime.com/badge/user/dd4f6161-75ab-4bbe-889a-daf7004ac1f3/project/d4d9b7d2-21ca-4c0a-984b-97ec68f5dd46)
