@@ -53,12 +53,16 @@ impl CPU {
         }
     }
 
-    pub fn set_flag(&mut self, position: u8, value: bool) {
+    pub fn set_flag(&mut self, position: usize, value: bool) {
         if value {
             self.f |= 1 << position;
         } else {
             self.f &= !(1 << position);
         }
+    }
+
+    pub fn get_flag(&self, position: usize) -> bool {
+        (self.f & (1 << position)) != 0
     }
 
     pub fn run(mut self, mut ram: Vec<u8>) {

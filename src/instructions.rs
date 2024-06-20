@@ -58,6 +58,7 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
     }
 }
 
+//TODO: WRAP PC
 pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) -> String {
     match instruction {
         Instruction::NOP => {
@@ -80,7 +81,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             cpu.set_flag(4, false);
             if (cpu.b & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
 
-            cpu.b += 1;
+            cpu.b = cpu.b.wrapping_add(1);
             cpu.pc += 1;
 
             cpu.set_flag(6, false);
@@ -93,14 +94,23 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("INC B 0x04");
         },
-        Instruction::DECB => { //FLAGS
-            if cpu.b == 0 {
-                cpu.f = 0b10000010;
-            } else {
-                cpu.b -= 1;
-            }
+        Instruction::DECB => {
+            cpu.set_flag(2, false);
+            if cpu.b == 0x80 { cpu.set_flag(2, true); } //P/V Flag
 
+            cpu.set_flag(4, false);
+            if (cpu.b & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
+
+            cpu.b = cpu.b.wrapping_sub(1);
             cpu.pc += 1;
+
+            cpu.set_flag(7, false);
+            if cpu.b > 0x7F { cpu.set_flag(7, true); } //S Flag
+
+            cpu.set_flag(6, false);
+            if cpu.b == 0x00 { cpu.set_flag(6, true); } //Z Flag
+
+            cpu.set_flag(1, true); //N Flag
 
             return String::from("DEC B 0x05");
         },
@@ -136,14 +146,16 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("LD (NN), HL 0x22");
         },
-        Instruction::INCHL => { //FLAGS?
-            cpu.set_pair(RegisterPair::HL, cpu.get_pair(RegisterPair::HL) + 1);
+        Instruction::INCHL => {
+            let result: u16 = cpu.get_pair(RegisterPair::HL).wrapping_add(1);
+            cpu.set_pair(RegisterPair::HL, result);
+
             cpu.pc += 1;
 
             return String::from("INC HL 0x23");
         },
-        Instruction::JRZD => { //FLAGS
-            if cpu.f == 0b01000010 {
+        Instruction::JRZD => {
+            if cpu.get_flag(6) { //Z Flag
                 cpu.pc += operand[0] as u16 + 2;
             } else {
                 cpu.pc += 2;
@@ -184,18 +196,26 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("HALT 0x76");
         },
-        Instruction::CPB => { //FLAGS
-            if cpu.b > cpu.a {
-                cpu.f = 0b10000010; //SN Flag
-            } else {
-                let value: u8 = cpu.a - cpu.b;
+        Instruction::CPB => {
+            cpu.set_flag(2, false);
+            if cpu.a == 0x80 { cpu.set_flag(2, true); } //P/V Flag
 
-                if value == 0 {
-                    cpu.f = 0b01000010; //ZN Flag
-                }
-            }
+            cpu.set_flag(4, false);
+            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
+
+            if cpu.a < cpu.b { cpu.set_flag(0, true); } //C Flag
+
+            let result: u8 = cpu.a.wrapping_sub(cpu.b);
+
+            cpu.set_flag(7, false);
+            if result > 0x7F { cpu.set_flag(7, true); } //S Flag
+
+            cpu.set_flag(6, false);
+            if result == 0x00 { cpu.set_flag(6, true); } //Z Flag
 
             cpu.pc += 1;
+
+            cpu.set_flag(1, true); //N Flag
 
             return String::from("CP B 0xB8");
         },
@@ -205,9 +225,27 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("JP NN 0xC3");
         },
-        Instruction::ADDAN => { //FLAGS
-            cpu.a += operand[0];
+        Instruction::ADDAN => {
+            cpu.set_flag(2, false);
+            if cpu.a == 0x7F { cpu.set_flag(2, true); } //P/V Flag
+
+            cpu.set_flag(4, false);
+            if (cpu.a & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
+
+            if (cpu.a as u16 + operand[0] as u16) > 0xFF {
+                cpu.set_flag(0, true); //C Flag
+            }
+
+            cpu.a = cpu.a.wrapping_add(operand[0]);
             cpu.pc += 2;
+
+            cpu.set_flag(6, false);
+            if cpu.a == 0x00 { cpu.set_flag(6, true); } //Z Flag
+
+            cpu.set_flag(7, false);
+            if cpu.a > 0x7F { cpu.set_flag(7, true); } //S Flag
+
+            cpu.set_flag(1, false); //N Flag
 
             return String::from("ADD A, N 0xC6");
         },
@@ -238,14 +276,25 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             return String::from("OUT N, A 0xD3");
         },
-        Instruction::SUBN => { //FLAGS
-            if cpu.a < operand[0] {
-                cpu.f = 0b10000010; //SN Flag
-            } else {
-                cpu.a -= operand[0];
-            }
+        Instruction::SUBN => {
+            cpu.set_flag(2, false);
+            if cpu.a == 0x80 { cpu.set_flag(2, true); } //P/V Flag
 
+            cpu.set_flag(4, false);
+            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
+
+            if cpu.a < operand[0] { cpu.set_flag(0, true); } //C Flag
+
+            cpu.a = cpu.a.wrapping_sub(operand[0]);
             cpu.pc += 2;
+
+            cpu.set_flag(7, false);
+            if cpu.a > 0x7F { cpu.set_flag(7, true); } //S Flag
+
+            cpu.set_flag(6, false);
+            if cpu.a == 0x00 { cpu.set_flag(6, true); } //Z Flag
+
+            cpu.set_flag(1, true); //N Flag
 
             return String::from("SUB A, N 0xD6");
         },
