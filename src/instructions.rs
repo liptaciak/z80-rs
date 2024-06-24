@@ -1,34 +1,23 @@
 use crate::cpu::{Processor, AddressMode, RegisterPair};
 
-#[allow(dead_code)]
+///Instruction set
 pub enum Instruction {
-    NOP,
-    LDBCNN,
-    INCB,
-    DECB,
-    LDBN,
-    LDCN,
-    LDDENN,
-    LDHLNN,
-    LDNNHL,
-    INCHL,
-    JRZD,
-    LDSPNN,
-    LDHLN,
-    LDBC,
-    LDAN,
-    LDBA,
-    HALT,
-    CPB,
-    JPNN,
-    ADDAN,
-    RET,
-    CALLNN,
-    OUTNA,
-    SUBN,
+    NOP, LDBCNN, INCB, DECB, LDBN, LDCN, LDDENN, LDHLNN,
+    LDNNHL, INCHL, JRZD, LDSPNN, LDHLN, LDBC, LDAN, LDBA,
+    HALT, CPB, JPNN, ADDAN, RET, CALLNN, OUTNA, SUBN,
     DI,
 }
 
+//To be implemented soon...
+
+//type InstructionInfo = (Instruction, AddressMode);
+
+//const INSTRUCTIONS: [InstructionInfo; 0xFF] = [
+//    (Instruction::NOP, AddressMode::None),
+//    ...
+//];
+
+///Return instruction based on opcode
 pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
     match instr {
         0x00 => {( Instruction::NOP, AddressMode::None )},
@@ -58,13 +47,15 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
     }
 }
 
-//TODO: WRAP PC
-pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) -> (String, Vec<u8>) {
+///Executes a single instruction.
+pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Vec<u8>) {
+    let str: String;
+
     match instruction {
         Instruction::NOP => {
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            return (String::from("NOP 0x00"), ram.clone());
+            str = String::from("NOP 0x00");
         },
         Instruction::LDBCNN => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
@@ -72,7 +63,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
-            return (String::from("LD BC, NN 0x01"), ram.clone());
+            str = String::from("LD BC, NN 0x01");
         },
         Instruction::INCB => {
             cpu.set_flag(2, false);
@@ -92,7 +83,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.set_flag(1, false); //N Flag
 
-            return (String::from("INC B 0x04"), ram.clone());
+            str = String::from("INC B 0x04");
         },
         Instruction::DECB => {
             cpu.set_flag(2, false);
@@ -112,13 +103,13 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.set_flag(1, true); //N Flag
 
-            return (String::from("DEC B 0x05"), ram.clone());
+            str = String::from("DEC B 0x05");
         },
         Instruction::LDBN => {
             cpu.b = operand[0];
             cpu.pc = cpu.pc.wrapping_add(2);
 
-            return (String::from("LD B, N 0x06"), ram.clone());
+            str = String::from("LD B, N 0x06");
         },
         Instruction::LDDENN => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
@@ -126,7 +117,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
-            return (String::from("LD DE, NN 0x11"), ram.clone());
+            str = String::from("LD DE, NN 0x11");
         },
         Instruction::LDHLNN => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
@@ -134,7 +125,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
-            return (String::from("LD HL, NN 0x21"), ram.clone());
+            str = String::from("LD HL, NN 0x21");
         },
         Instruction::LDNNHL => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
@@ -144,7 +135,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
-            return (String::from("LD (NN), HL 0x22"), ram.clone());
+            str = String::from("LD (NN), HL 0x22");
         },
         Instruction::INCHL => {
             let result: u16 = cpu.get_pair(RegisterPair::HL).wrapping_add(1);
@@ -152,7 +143,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            return (String::from("INC HL 0x23"), ram.clone());
+            str = String::from("INC HL 0x23");
         },
         Instruction::JRZD => {
             if cpu.get_flag(6) { //Z Flag
@@ -162,7 +153,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
                 cpu.pc = cpu.pc.wrapping_add(2);
             }
 
-            return (String::from("JR Z, D 0x28"), ram.clone());
+            str = String::from("JR Z, D 0x28");
         },
         Instruction::LDSPNN => {    
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
@@ -170,32 +161,32 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
-            return (String::from("LD SP, NN 0x31"), ram.clone());
+            str = String::from("LD SP, NN 0x31");
         },
         Instruction::LDHLN => {
             ram[cpu.get_pair(RegisterPair::HL) as usize] = operand[0];
 
             cpu.pc = cpu.pc.wrapping_add(2);
 
-            return (String::from("LD (HL), N 0x36"), ram.clone());
+            str = String::from("LD (HL), N 0x36");
         },
         Instruction::LDAN => {
             cpu.a = operand[0];    
             cpu.pc = cpu.pc.wrapping_add(2);
 
-            return (String::from("LD A, N 0x3E"), ram.clone());
+            str = String::from("LD A, N 0x3E");
         },
         Instruction::LDBA => {
             cpu.b = cpu.a;
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            return (String::from("LD B, A 0x06"), ram.clone());
+            str = String::from("LD B, A 0x06");
         },
         Instruction::HALT => {
             cpu.pc = cpu.pc.wrapping_add(1);
             cpu.halted = true;
 
-            return (String::from("HALT 0x76"), ram.clone());
+            str = String::from("HALT 0x76");
         },
         Instruction::CPB => {
             cpu.set_flag(2, false);
@@ -218,13 +209,13 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.set_flag(1, true); //N Flag
 
-            return (String::from("CP B 0xB8"), ram.clone());
+            str = String::from("CP B 0xB8");
         },
         Instruction::JPNN => {
             let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.pc = address;
 
-            return (String::from("JP NN 0xC3"), ram.clone());
+            str = String::from("JP NN 0xC3");
         },
         Instruction::ADDAN => {
             cpu.set_flag(2, false);
@@ -248,7 +239,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.set_flag(1, false); //N Flag
 
-            return (String::from("ADD A, N 0xC6"), ram.clone());
+            str = String::from("ADD A, N 0xC6");
         },
         Instruction::RET => {
             let address: u16 = ((ram[(cpu.sp + 1) as usize] as u16) << 8) | (ram[cpu.sp as usize] as u16);
@@ -256,7 +247,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
         
             cpu.sp = cpu.sp.wrapping_add(2);
         
-            return (String::from("RET 0xC9"), ram.clone());
+            str = String::from("RET 0xC9");
         },
         Instruction::CALLNN => {
             cpu.pc = cpu.pc.wrapping_add(3);
@@ -269,13 +260,13 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
             let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.pc = address;
         
-            return (String::from("CALL NN 0xCD"), ram.clone());
+            str = String::from("CALL NN 0xCD");
         },
         Instruction::OUTNA => {
             //Write A to port N
             cpu.pc = cpu.pc.wrapping_add(2);
 
-            return (String::from("OUT N, A 0xD3"), ram.clone());
+            str = String::from("OUT N, A 0xD3");
         },
         Instruction::SUBN => {
             cpu.set_flag(2, false);
@@ -297,16 +288,18 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: 
 
             cpu.set_flag(1, true); //N Flag
 
-            return (String::from("SUB A, N 0xD6"), ram.clone());
+            str = String::from("SUB A, N 0xD6");
         },
         Instruction::DI => {
             //Prevent maskable interrupts from triggering
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            return (String::from("DI 0xF3"), ram.clone());
+            str = String::from("DI 0xF3");
         },
 
         #[allow(unreachable_patterns)]
         _ => panic!("Instruction not implemented."),
     }
+
+    (str, cpu.to_owned(), ram.to_owned())
 }

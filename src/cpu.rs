@@ -1,6 +1,7 @@
 use crate::instructions::{match_instruction, process_instruction};
 use inline_colorization::*;
 
+///Define CPU fields
 #[derive(Default, Clone)]
 pub struct Processor {
     pub a: u8, pub f: u8,
@@ -15,10 +16,12 @@ pub struct Processor {
     pub halted: bool,
 }
 
+///Possible register pairs
 pub enum RegisterPair {
     BC, DE, HL,
 }
 
+///Possible address modes
 pub enum AddressMode {
     None,
     Register,
@@ -27,7 +30,9 @@ pub enum AddressMode {
     ImmediateExtended,
 }
 
+///CPU implementation
 impl Processor {
+    ///Get register pair value
     pub fn get_pair(&self, pair: RegisterPair) -> u16 {
         match pair {
             RegisterPair::BC => ((self.b as u16) << 8) | (self.c as u16),
@@ -36,6 +41,7 @@ impl Processor {
         }
     }
 
+    ///Set register pair value
     pub fn set_pair(&mut self, pair: RegisterPair, value: u16) {
         match pair {
             RegisterPair::BC => {
@@ -53,6 +59,7 @@ impl Processor {
         }
     }
 
+    ///Set flag value
     pub fn set_flag(&mut self, position: usize, value: bool) {
         if value {
             self.f |= 1 << position;
@@ -61,10 +68,12 @@ impl Processor {
         }
     }
 
+    ///Get flag value
     pub fn get_flag(&self, position: usize) -> bool {
         (self.f & (1 << position)) != 0
     }
 
+    ///Run program from memory
     pub fn run(mut self, mut ram: Vec<u8>) {
         loop {
             if self.halted { continue; }

@@ -15,11 +15,13 @@ fn main() {
         .get_matches();
 
     let cpu: Processor = Default::default();
-
+    
+    //Get the file to process
     let file = matches.get_one::<String>("file").unwrap();
     let program: Vec<u8> = fs::read(file)
         .expect("Not able to read file.");
     
+    //Load the program into memory
     let mut ram: Vec<u8> = Vec::with_capacity(0x10000);
     for opcode in program.iter().copied() {
         if ram.len() < 0x10000 {
