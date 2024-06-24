@@ -1,4 +1,4 @@
-use crate::{CPU, AddressMode, RegisterPair};
+use crate::cpu::{Processor, AddressMode, RegisterPair};
 
 #[allow(dead_code)]
 pub enum Instruction {
@@ -59,20 +59,20 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
 }
 
 //TODO: WRAP PC
-pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) -> String {
+pub fn process_instruction(cpu: &mut Processor, ram: &mut Vec<u8>, instruction: Instruction, operand: Vec<u8>) -> (String, Vec<u8>) {
     match instruction {
         Instruction::NOP => {
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
-            return String::from("NOP 0x00");
+            return (String::from("NOP 0x00"), ram.clone());
         },
         Instruction::LDBCNN => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::BC, value);
 
-            cpu.pc += 3;
+            cpu.pc = cpu.pc.wrapping_add(3);
 
-            return String::from("LD BC, NN 0x01");
+            return (String::from("LD BC, NN 0x01"), ram.clone());
         },
         Instruction::INCB => {
             cpu.set_flag(2, false);
@@ -82,7 +82,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             if (cpu.b & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
 
             cpu.b = cpu.b.wrapping_add(1);
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
             cpu.set_flag(6, false);
             if cpu.b == 0x00 { cpu.set_flag(6, true); } //Z Flag
@@ -92,7 +92,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             cpu.set_flag(1, false); //N Flag
 
-            return String::from("INC B 0x04");
+            return (String::from("INC B 0x04"), ram.clone());
         },
         Instruction::DECB => {
             cpu.set_flag(2, false);
@@ -102,7 +102,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             if (cpu.b & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
 
             cpu.b = cpu.b.wrapping_sub(1);
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
             cpu.set_flag(7, false);
             if cpu.b > 0x7F { cpu.set_flag(7, true); } //S Flag
@@ -112,29 +112,29 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             cpu.set_flag(1, true); //N Flag
 
-            return String::from("DEC B 0x05");
+            return (String::from("DEC B 0x05"), ram.clone());
         },
         Instruction::LDBN => {
             cpu.b = operand[0];
-            cpu.pc += 2;
+            cpu.pc = cpu.pc.wrapping_add(2);
 
-            return String::from("LD B, N 0x06");
+            return (String::from("LD B, N 0x06"), ram.clone());
         },
         Instruction::LDDENN => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::DE, value);
 
-            cpu.pc += 3;
+            cpu.pc = cpu.pc.wrapping_add(3);
 
-            return String::from("LD DE, NN 0x11");
+            return (String::from("LD DE, NN 0x11"), ram.clone());
         },
         Instruction::LDHLNN => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::HL, value);
 
-            cpu.pc += 3;
+            cpu.pc = cpu.pc.wrapping_add(3);
 
-            return String::from("LD HL, NN 0x21");
+            return (String::from("LD HL, NN 0x21"), ram.clone());
         },
         Instruction::LDNNHL => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
@@ -142,59 +142,60 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             ram[value as usize] = cpu.l;
             ram[(value + 1) as usize] = cpu.h;
 
-            cpu.pc += 3;
+            cpu.pc = cpu.pc.wrapping_add(3);
 
-            return String::from("LD (NN), HL 0x22");
+            return (String::from("LD (NN), HL 0x22"), ram.clone());
         },
         Instruction::INCHL => {
             let result: u16 = cpu.get_pair(RegisterPair::HL).wrapping_add(1);
             cpu.set_pair(RegisterPair::HL, result);
 
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
-            return String::from("INC HL 0x23");
+            return (String::from("INC HL 0x23"), ram.clone());
         },
         Instruction::JRZD => {
             if cpu.get_flag(6) { //Z Flag
-                cpu.pc += operand[0] as u16 + 2;
+                let result: u16 = operand[0] as u16 + 2;
+                cpu.pc = cpu.pc.wrapping_add(result);
             } else {
-                cpu.pc += 2;
+                cpu.pc = cpu.pc.wrapping_add(2);
             }
 
-            return String::from("JR Z, D 0x28");
+            return (String::from("JR Z, D 0x28"), ram.clone());
         },
         Instruction::LDSPNN => {    
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.sp = value;
 
-            cpu.pc += 3;
+            cpu.pc = cpu.pc.wrapping_add(3);
 
-            return String::from("LD SP, NN 0x31");
+            return (String::from("LD SP, NN 0x31"), ram.clone());
         },
         Instruction::LDHLN => {
             ram[cpu.get_pair(RegisterPair::HL) as usize] = operand[0];
 
-            cpu.pc += 2;
+            cpu.pc = cpu.pc.wrapping_add(2);
 
-            return String::from("LD (HL), N 0x36");
+            return (String::from("LD (HL), N 0x36"), ram.clone());
         },
         Instruction::LDAN => {
             cpu.a = operand[0];    
-            cpu.pc += 2;
+            cpu.pc = cpu.pc.wrapping_add(2);
 
-            return String::from("LD A, N 0x3E");
+            return (String::from("LD A, N 0x3E"), ram.clone());
         },
         Instruction::LDBA => {
             cpu.b = cpu.a;
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
-            return String::from("LD B, A 0x06");
+            return (String::from("LD B, A 0x06"), ram.clone());
         },
         Instruction::HALT => {
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
             cpu.halted = true;
 
-            return String::from("HALT 0x76");
+            return (String::from("HALT 0x76"), ram.clone());
         },
         Instruction::CPB => {
             cpu.set_flag(2, false);
@@ -213,17 +214,17 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             cpu.set_flag(6, false);
             if result == 0x00 { cpu.set_flag(6, true); } //Z Flag
 
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
             cpu.set_flag(1, true); //N Flag
 
-            return String::from("CP B 0xB8");
+            return (String::from("CP B 0xB8"), ram.clone());
         },
         Instruction::JPNN => {
             let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.pc = address;
 
-            return String::from("JP NN 0xC3");
+            return (String::from("JP NN 0xC3"), ram.clone());
         },
         Instruction::ADDAN => {
             cpu.set_flag(2, false);
@@ -237,7 +238,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             }
 
             cpu.a = cpu.a.wrapping_add(operand[0]);
-            cpu.pc += 2;
+            cpu.pc = cpu.pc.wrapping_add(2);
 
             cpu.set_flag(6, false);
             if cpu.a == 0x00 { cpu.set_flag(6, true); } //Z Flag
@@ -247,34 +248,34 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             cpu.set_flag(1, false); //N Flag
 
-            return String::from("ADD A, N 0xC6");
+            return (String::from("ADD A, N 0xC6"), ram.clone());
         },
         Instruction::RET => {
             let address: u16 = ((ram[(cpu.sp + 1) as usize] as u16) << 8) | (ram[cpu.sp as usize] as u16);
             cpu.pc = address;
         
-            cpu.sp += 2;
+            cpu.sp = cpu.sp.wrapping_add(2);
         
-            return String::from("RET 0xC9");
+            return (String::from("RET 0xC9"), ram.clone());
         },
         Instruction::CALLNN => {
-            cpu.pc += 3;
+            cpu.pc = cpu.pc.wrapping_add(3);
         
             ram[(cpu.sp - 1) as usize] = (cpu.pc >> 8) as u8;
             ram[(cpu.sp - 2) as usize] = cpu.pc as u8;
         
-            cpu.sp -= 2;
+            cpu.sp = cpu.sp.wrapping_sub(2);
         
             let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.pc = address;
         
-            return String::from("CALL NN 0xCD");
+            return (String::from("CALL NN 0xCD"), ram.clone());
         },
         Instruction::OUTNA => {
             //Write A to port N
-            cpu.pc += 2;
+            cpu.pc = cpu.pc.wrapping_add(2);
 
-            return String::from("OUT N, A 0xD3");
+            return (String::from("OUT N, A 0xD3"), ram.clone());
         },
         Instruction::SUBN => {
             cpu.set_flag(2, false);
@@ -286,7 +287,7 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
             if cpu.a < operand[0] { cpu.set_flag(0, true); } //C Flag
 
             cpu.a = cpu.a.wrapping_sub(operand[0]);
-            cpu.pc += 2;
+            cpu.pc = cpu.pc.wrapping_add(2);
 
             cpu.set_flag(7, false);
             if cpu.a > 0x7F { cpu.set_flag(7, true); } //S Flag
@@ -296,13 +297,13 @@ pub fn process_instruction(cpu: &mut CPU, ram: &mut Vec<u8>, instruction: Instru
 
             cpu.set_flag(1, true); //N Flag
 
-            return String::from("SUB A, N 0xD6");
+            return (String::from("SUB A, N 0xD6"), ram.clone());
         },
         Instruction::DI => {
             //Prevent maskable interrupts from triggering
-            cpu.pc += 1;
+            cpu.pc = cpu.pc.wrapping_add(1);
 
-            return String::from("DI 0xF3");
+            return (String::from("DI 0xF3"), ram.clone());
         },
 
         #[allow(unreachable_patterns)]

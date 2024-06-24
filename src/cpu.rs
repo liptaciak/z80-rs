@@ -1,8 +1,8 @@
-use crate::{match_instruction, process_instruction};
+use crate::instructions::{match_instruction, process_instruction};
 use inline_colorization::*;
 
 #[derive(Default, Clone)]
-pub struct CPU {
+pub struct Processor {
     pub a: u8, pub f: u8,
     pub b: u8, pub c: u8,
     pub d: u8, pub e: u8,
@@ -27,7 +27,7 @@ pub enum AddressMode {
     ImmediateExtended,
 }
 
-impl CPU {
+impl Processor {
     pub fn get_pair(&self, pair: RegisterPair) -> u16 {
         match pair {
             RegisterPair::BC => ((self.b as u16) << 8) | (self.c as u16),
@@ -84,8 +84,8 @@ impl CPU {
                 _ => { }
             }
             
-            let cpu_cloned: CPU = self.clone();
-            let result: String = process_instruction(&mut self, &mut ram, instruction, operand);
+            let cpu_cloned: Processor = self.clone();
+            let result: String = process_instruction(&mut self, &mut ram, instruction, operand).0;
 
             println!("{color_cyan} {}", result);
 
@@ -111,8 +111,6 @@ impl CPU {
             println!("{color_white} PC: {:#06X} > {:#06X}", cpu_cloned.pc, self.pc);
 
             println!("{color_reset}{style_reset}\n");
-
-            if self.pc > u16::MAX { self.pc = 0x0000; }
         }
     }
 }

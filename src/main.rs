@@ -1,16 +1,11 @@
-mod cpu;
-mod instructions;
-
 use std::fs;
-
-use cpu::{CPU, RegisterPair, AddressMode};
-use instructions::{match_instruction, process_instruction};
-
 use clap::{Arg, Command};
 
+use zin::cpu::Processor;
+
 fn main() {
-    let matches = Command::new("z80")
-        .about("Z80 Emulator.")
+    let matches = Command::new("zin")
+        .about("A z80 emulator.")
         .arg(
             Arg::new("file")
                 .help("The file to process.")
@@ -19,7 +14,7 @@ fn main() {
         )
         .get_matches();
 
-    let cpu: CPU = Default::default();
+    let cpu: Processor = Default::default();
 
     let file = matches.get_one::<String>("file").unwrap();
     let program: Vec<u8> = fs::read(file)
@@ -32,9 +27,7 @@ fn main() {
         }
     }
     
-    unsafe {
-        ram.set_len(0x10000);
-    }
+    unsafe { ram.set_len(0x10000); }
 
     cpu.run(ram);
 }

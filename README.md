@@ -1,4 +1,4 @@
-# z80
+# zin
 Z80 Emulator written in Rust :crab:
 
 
@@ -34,4 +34,4 @@ Generate binary file:
 
 and run the emulator using:
 
-`z80 z80.bin`
+`zin z80.bin`
