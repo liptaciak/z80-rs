@@ -6,27 +6,6 @@ First, generate binary file using Assembler. For example:
 
 Using [Sjasmplus](https://github.com/z00m128/sjasmplus):
 
-#### **`z80.asm`**
-```asm
-start:
-    ld a, 5
-    
-loop:
-    cp b
-    jr z, end
-
-    inc b
-    jp loop
-    
-end:
-    halt 
-    jp end
-    
-    end start
-```
-
-this code will create a loop that executes 5 times.
-
 
 Generate binary file:
 `sjasmplus --raw=z80.bin z80.asm`
@@ -35,3 +14,5 @@ Generate binary file:
 and run the emulator using:
 
 `zin z80.bin`
+
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fliptaciak%2Fzin&count_bg=%23FF6E6E&title_bg=%23555555&icon=sparkpost.svg&icon_color=%23E7E7E7&title=hits&edge_flat=true)](https://hits.seeyoufarm.com)
