@@ -1,4 +1,6 @@
 use crate::instructions::{match_instruction, process_instruction};
+use crate::memory::Memory;
+
 use inline_colorization::*;
 
 ///Define CPU fields
@@ -74,27 +76,29 @@ impl Processor {
     }
 
     ///Run program from memory
-    pub fn run(mut self, mut ram: Vec<u8>) {
+    pub fn run(mut self, mut memory: Memory, org: u16) {
+        self.pc = org;
+
         loop {
             if self.halted { continue; }
 
-            let instr: u8 = ram[self.pc as usize];
+            let instr: u8 = memory.read(self.pc as usize);
             let mut operand: Vec<u8> = Vec::new();
     
             let (instruction, address_mode) = match_instruction(instr);
             match address_mode {
                 AddressMode::Immediate => { 
-                    operand.push(ram[self.pc as usize + 1]);
+                    operand.push(memory.read(self.pc as usize + 1));
                 },
                 AddressMode::ImmediateExtended | AddressMode::Extended => {
-                    operand.push(ram[self.pc as usize + 1]);
-                    operand.push(ram[self.pc as usize + 2]);
+                    operand.push(memory.read(self.pc as usize + 1));
+                    operand.push(memory.read(self.pc as usize + 2));
                 },
                 _ => { }
             }
             
             let cpu_cloned: Processor = self.clone();
-            let result: String = process_instruction(&mut self, &mut ram, instruction, operand).0;
+            let result: String = process_instruction(&mut self, &mut memory, instruction, operand).0;
 
             println!("{color_cyan} {}", result);
 

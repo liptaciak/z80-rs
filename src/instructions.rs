@@ -1,4 +1,5 @@
 use crate::cpu::{Processor, AddressMode, RegisterPair};
+use crate::memory::Memory;
 
 ///Instruction set
 pub enum Instruction {
@@ -48,7 +49,7 @@ pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
 }
 
 ///Executes a single instruction.
-pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Vec<u8>) {
+pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Memory) {
     let str: String;
 
     match instruction {
@@ -130,8 +131,8 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Ins
         Instruction::LDNNHL => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
 
-            ram[value as usize] = cpu.l;
-            ram[(value + 1) as usize] = cpu.h;
+            memory.write(value as usize, cpu.l);
+            memory.write((value + 1) as usize, cpu.h);
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
@@ -164,7 +165,7 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Ins
             str = String::from("LD SP, NN 0x31");
         },
         Instruction::LDHLN => {
-            ram[cpu.get_pair(RegisterPair::HL) as usize] = operand[0];
+            memory.write(cpu.get_pair(RegisterPair::HL) as usize, operand[0]);
 
             cpu.pc = cpu.pc.wrapping_add(2);
 
@@ -242,7 +243,8 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Ins
             str = String::from("ADD A, N 0xC6");
         },
         Instruction::RET => {
-            let address: u16 = ((ram[(cpu.sp + 1) as usize] as u16) << 8) | (ram[cpu.sp as usize] as u16);
+            let address: u16 = ((memory.read((cpu.sp + 1) as usize) as u16) << 8) |
+            (memory.read(cpu.sp as usize) as u16);
             cpu.pc = address;
         
             cpu.sp = cpu.sp.wrapping_add(2);
@@ -252,8 +254,8 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Ins
         Instruction::CALLNN => {
             cpu.pc = cpu.pc.wrapping_add(3);
         
-            ram[(cpu.sp - 1) as usize] = (cpu.pc >> 8) as u8;
-            ram[(cpu.sp - 2) as usize] = cpu.pc as u8;
+            memory.write((cpu.sp - 1) as usize, (cpu.pc >> 8) as u8);
+            memory.write((cpu.sp - 2) as usize, cpu.pc as u8);
         
             cpu.sp = cpu.sp.wrapping_sub(2);
         
@@ -301,5 +303,5 @@ pub fn process_instruction(cpu: &mut Processor, ram: &mut [u8], instruction: Ins
         _ => panic!("Instruction not implemented."),
     }
 
-    (str, cpu.to_owned(), ram.to_owned())
+    (str, cpu.to_owned(), memory.to_owned())
 }

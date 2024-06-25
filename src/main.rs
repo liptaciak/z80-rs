@@ -1,7 +1,7 @@
-use std::fs;
 use clap::{Arg, Command};
 
 use zin::cpu::Processor;
+use zin::memory::Memory;
 
 fn main() {
     let matches = Command::new("zin")
@@ -12,24 +12,32 @@ fn main() {
                 .required(true)
                 .index(1),
         )
+        .arg(
+            Arg::new("org")
+                .help("The origin address.")
+                .required(false)
+                .index(2),
+        )
         .get_matches();
 
     let cpu: Processor = Default::default();
-    
-    //Get the file to process
+
+    //Get the file to process and load it to memory
     let file = matches.get_one::<String>("file").unwrap();
-    let program: Vec<u8> = fs::read(file)
-        .expect("Not able to read file.");
+    let org_arg = matches.get_one::<String>("org");
     
-    //Load the program into memory
-    let mut ram: Vec<u8> = Vec::with_capacity(0x10000);
-    for opcode in program.iter().copied() {
-        if ram.len() < 0x10000 {
-            ram.push(opcode);
+    let mut org: u16 = 0x0000;
+    if !org_arg.is_none() {
+        if org_arg.unwrap().starts_with("0x") {
+            org = u16::from_str_radix(&org_arg.unwrap()[2..], 16).unwrap();
+        } else {
+            org = org_arg.unwrap().parse::<u16>().unwrap();
         }
     }
-    
-    unsafe { ram.set_len(0x10000); }
 
-    cpu.run(ram);
+    let mut memory: Memory = Memory::new();
+    memory.load_file(file.as_str(), org);
+    
+    //Run the program
+    cpu.run(memory, org);
 }
