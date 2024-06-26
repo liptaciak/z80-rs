@@ -1,52 +1,7 @@
-use crate::cpu::{Processor, AddressMode, RegisterPair};
+use crate::cpu::processor::Processor;
 use crate::memory::Memory;
 
-///Instruction set
-pub enum Instruction {
-    NOP, LDBCNN, INCB, DECB, LDBN, LDCN, LDDENN, LDHLNN,
-    LDNNHL, INCHL, JRZD, LDSPNN, LDHLN, LDBC, LDAN, LDBA,
-    HALT, CPB, JPNN, ADDAN, RET, CALLNN, OUTNA, SUBN,
-    DI,
-}
-
-//To be implemented soon...
-
-//type InstructionInfo = (Instruction, AddressMode);
-
-//const INSTRUCTIONS: [InstructionInfo; 0xFF] = [
-//    (Instruction::NOP, AddressMode::None),
-//    ...
-//];
-
-///Return instruction based on opcode
-pub fn match_instruction(instr: u8) -> (Instruction, AddressMode) {
-    match instr {
-        0x00 => {( Instruction::NOP, AddressMode::None )},
-        0x01 => {( Instruction::LDBCNN, AddressMode::ImmediateExtended )},
-        0x04 => {( Instruction::INCB, AddressMode::Register )},
-        0x05 => {( Instruction::DECB, AddressMode::Register )},
-        0x06 => {( Instruction::LDBN, AddressMode::Immediate )},
-        0x11 => {( Instruction::LDDENN, AddressMode::ImmediateExtended )},
-        0x21 => {( Instruction::LDHLNN, AddressMode::ImmediateExtended )},
-        0x22 => {( Instruction::LDNNHL, AddressMode::Extended )},
-        0x23 => {( Instruction::INCHL, AddressMode::Register )},
-        0x28 => {( Instruction::JRZD, AddressMode::Immediate )},
-        0x31 => {( Instruction::LDSPNN, AddressMode::Extended )},
-        0x36 => {( Instruction::LDHLN, AddressMode::Immediate )},
-        0x3E => {( Instruction::LDAN, AddressMode::Immediate )},
-        0x47 => {( Instruction::LDBA, AddressMode::Register )},
-        0x76 => {( Instruction::HALT, AddressMode::None )},
-        0xB8 => {( Instruction::CPB, AddressMode::Register )},
-        0xC3 => {( Instruction::JPNN, AddressMode::Extended )},
-        0xC6 => {( Instruction::ADDAN, AddressMode::Immediate )},
-        0xC9 => {( Instruction::RET, AddressMode::None )},
-        0xCD => {( Instruction::CALLNN, AddressMode::Extended )},
-        0xD3 => {( Instruction::OUTNA, AddressMode::Immediate )},
-        0xD6 => {( Instruction::SUBN, AddressMode::Immediate )},
-        0xF3 => {( Instruction::DI, AddressMode::None )},
-        _ => panic!("Instruction {:#X} not supported.", instr),
-    }
-}
+use crate::instruction::set::{Instruction, RegisterPair};
 
 ///Executes a single instruction.
 pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Memory) {
@@ -120,7 +75,7 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
 
             str = String::from("LD DE, NN 0x11");
         },
-        Instruction::LDHLNN => {
+        Instruction::LDHLNNM => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
             cpu.set_pair(RegisterPair::HL, value);
 
@@ -128,11 +83,11 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
 
             str = String::from("LD HL, NN 0x21");
         },
-        Instruction::LDNNHL => {
+        Instruction::LDMNNHL => {
             let value: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
 
-            memory.write(value as usize, cpu.l);
-            memory.write((value + 1) as usize, cpu.h);
+            memory.write(value, cpu.l);
+            memory.write(value + 1, cpu.h);
 
             cpu.pc = cpu.pc.wrapping_add(3);
 
@@ -164,8 +119,8 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
 
             str = String::from("LD SP, NN 0x31");
         },
-        Instruction::LDHLN => {
-            memory.write(cpu.get_pair(RegisterPair::HL) as usize, operand[0]);
+        Instruction::LDMHLN => {
+            memory.write(cpu.get_pair(RegisterPair::HL), operand[0]);
 
             cpu.pc = cpu.pc.wrapping_add(2);
 
@@ -225,7 +180,7 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
             cpu.set_flag(4, false);
             if (cpu.a & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
 
-            if (cpu.a as u16 + operand[0] as u16) > 0xFF {
+            if (cpu.a.wrapping_add(operand[0]) as u16) > 0xFF {
                 cpu.set_flag(0, true); //C Flag
             }
 
@@ -243,8 +198,8 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
             str = String::from("ADD A, N 0xC6");
         },
         Instruction::RET => {
-            let address: u16 = ((memory.read((cpu.sp + 1) as usize) as u16) << 8) |
-            (memory.read(cpu.sp as usize) as u16);
+            let address: u16 = ((memory.read(cpu.sp.wrapping_add(1)) as u16) << 8) |
+            (memory.read(cpu.sp) as u16);
             cpu.pc = address;
         
             cpu.sp = cpu.sp.wrapping_add(2);
@@ -254,8 +209,8 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
         Instruction::CALLNN => {
             cpu.pc = cpu.pc.wrapping_add(3);
         
-            memory.write((cpu.sp - 1) as usize, (cpu.pc >> 8) as u8);
-            memory.write((cpu.sp - 2) as usize, cpu.pc as u8);
+            memory.write(cpu.sp.wrapping_sub(1), (cpu.pc >> 8) as u8);
+            memory.write(cpu.sp.wrapping_sub(2), cpu.pc as u8);
         
             cpu.sp = cpu.sp.wrapping_sub(2);
         

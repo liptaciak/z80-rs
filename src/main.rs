@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 
-use zin::cpu::Processor;
+use zin::cpu::processor::Processor;
 use zin::memory::Memory;
 
 fn main() {

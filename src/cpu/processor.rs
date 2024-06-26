@@ -1,4 +1,6 @@
-use crate::instructions::{match_instruction, process_instruction};
+use crate::instruction::implementation::process_instruction;
+use crate::instruction::set::{AddressMode, RegisterPair, INSTRUCTIONS};
+
 use crate::memory::Memory;
 
 use inline_colorization::*;
@@ -16,20 +18,6 @@ pub struct Processor {
     pub sp: u16,
     pub pc: u16,
     pub halted: bool,
-}
-
-///Possible register pairs
-pub enum RegisterPair {
-    BC, DE, HL,
-}
-
-///Possible address modes
-pub enum AddressMode {
-    None,
-    Register,
-    Extended,
-    Immediate,
-    ImmediateExtended,
 }
 
 ///CPU implementation
@@ -82,23 +70,23 @@ impl Processor {
         loop {
             if self.halted { continue; }
 
-            let instr: u8 = memory.read(self.pc as usize);
+            let opcode: u8 = memory.read(self.pc);
             let mut operand: Vec<u8> = Vec::new();
     
-            let (instruction, address_mode) = match_instruction(instr);
-            match address_mode {
+            let (instruction, address_mode) = &INSTRUCTIONS[opcode as usize];
+            match *address_mode {
                 AddressMode::Immediate => { 
-                    operand.push(memory.read(self.pc as usize + 1));
+                    operand.push(memory.read(self.pc + 1));
                 },
                 AddressMode::ImmediateExtended | AddressMode::Extended => {
-                    operand.push(memory.read(self.pc as usize + 1));
-                    operand.push(memory.read(self.pc as usize + 2));
+                    operand.push(memory.read(self.pc + 1));
+                    operand.push(memory.read(self.pc + 2));
                 },
                 _ => { }
             }
             
             let cpu_cloned: Processor = self.clone();
-            let result: String = process_instruction(&mut self, &mut memory, instruction, operand).0;
+            let result: String = process_instruction(&mut self, &mut memory, *instruction, operand).0;
 
             println!("{color_cyan} {}", result);
 

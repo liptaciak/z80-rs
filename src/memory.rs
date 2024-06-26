@@ -19,23 +19,23 @@ impl Memory {
             .expect("Not able to read the file.");
 
         for (i, byte) in program.iter().enumerate() {
-            self.write((org as usize) + i, *byte);
+            self.write(org + (i as u16), *byte);
         }
     }
 
-    pub fn read(self, address: usize) -> u8 {
-        if address < MEMORY_SIZE {
+    pub fn read(self, address: u16) -> u8 {
+        if (address as usize) < MEMORY_SIZE {
             let memory = MEMORY.read().unwrap();
-            memory[address]
+            memory[address as usize]
         } else {
             panic!("Address out of bounds.")
         }
     }
 
-    pub fn write(self, address: usize, value: u8) {
-        if address < MEMORY_SIZE {
+    pub fn write(self, address: u16, value: u8) {
+        if (address as usize) < MEMORY_SIZE {
             let mut memory = MEMORY.write().unwrap();
-            memory[address] = value;
+            memory[address as usize] = value;
         } else {
             panic!("Address out of bounds.")
         }
