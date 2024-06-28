@@ -10,7 +10,7 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
 
     match instruction {
         Instruction::NOP => {
-            cpu.pc = cpu.pc.wrapping_add(1);
+            if !cpu.halted { cpu.pc = cpu.pc.wrapping_add(1) };
 
             str = String::from("NOP 0x00");
         },
