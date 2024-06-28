@@ -10,9 +10,7 @@ const MEMORY_SIZE: usize = 0x10000;
 lazy_static! { static ref MEMORY: RwLock<[u8; MEMORY_SIZE]> = RwLock::new([0; MEMORY_SIZE]); }
 
 impl Memory {
-    pub fn new() -> Self {
-        Memory {}
-    }
+    pub fn new() -> Self { Memory {} }
 
     pub fn load_file(&mut self, file: &str, org: u16) {
         let program: Vec<u8> = fs::read(file)

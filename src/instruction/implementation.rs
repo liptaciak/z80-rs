@@ -1,10 +1,11 @@
 use crate::cpu::processor::Processor;
 use crate::memory::Memory;
 
+use crate::io::handler::IoHandler;
 use crate::instruction::set::{Instruction, RegisterPair};
 
 ///Executes a single instruction.
-pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Memory) {
+pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut IoHandler, instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Memory) {
     let str: String;
 
     match instruction {
@@ -220,7 +221,7 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
             str = String::from("CALL NN 0xCD");
         },
         Instruction::OUTNA => {
-            //Write A to port N
+            io.write(operand[0], cpu.a);
             cpu.pc = cpu.pc.wrapping_add(2);
 
             str = String::from("OUT N, A 0xD3");
@@ -247,11 +248,27 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, instruction
 
             str = String::from("SUB A, N 0xD6");
         },
+        Instruction::INAN => {
+            cpu.a = io.read(operand[0]);
+            cpu.pc = cpu.pc.wrapping_add(2);
+
+            str = String::from("IN A, N 0xDB");
+        },
         Instruction::DI => {
-            //Prevent maskable interrupts from triggering
+            cpu.iff1 = false;
+            cpu.iff2 = false;
+            
             cpu.pc = cpu.pc.wrapping_add(1);
 
             str = String::from("DI 0xF3");
+        },
+        Instruction::EI => {
+            cpu.iff1 = true;
+            cpu.iff2 = true;
+
+            cpu.pc = cpu.pc.wrapping_add(1);
+
+            str = String::from("EI 0xFB");
         },
 
         #[allow(unreachable_patterns)]

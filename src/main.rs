@@ -1,6 +1,7 @@
 use clap::{Arg, Command};
 
 use zin::cpu::processor::Processor;
+use zin::io::handler::IoHandler;
 use zin::memory::Memory;
 
 fn main() {
@@ -37,7 +38,9 @@ fn main() {
 
     let mut memory: Memory = Memory::new();
     memory.load_file(file.as_str(), org);
+
+    let io: IoHandler = IoHandler::new();
     
     //Run the program
-    cpu.run(memory, org);
+    cpu.run(memory, io, org);
 }

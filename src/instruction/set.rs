@@ -30,9 +30,9 @@ pub enum Instruction {
     _ANDB, _ANDC, _ANDD, _ANDE, _ANDH, _ANDL, _ANDHLM, _ANDA, _XORB, _XORC, _XORD, _XORE, _XORH, _XORL, _XORHLM, _XORA,
     _ORB, _ORC, _ORD, _ORE, _ORH, _ORL, _ORHLM, _ORA, CPB, _CPC, _CPD, _CPE, _CPH, _CPLR, _CPHLM, _CPA,
     _RETNZ, _POPBC, _JPNZNN, JPNN, _CALLNZNN, _PUSHBC, ADDAN, _RST00H, _RETZ, RET, _JPZNN, _BITSET, _CALLZNN, CALLNN, _ADCAN, _RST08H,
-    _RETNC, _POPDE, _JPNCNN, OUTNA, _CALLNCNN, _PUSHDE, SUBN, _RST10H, _RETC, _EXX, _JPCNN, _INAN, _CALLCNN, _IXSET, _SBCAN, _RST18H,
+    _RETNC, _POPDE, _JPNCNN, OUTNA, _CALLNCNN, _PUSHDE, SUBN, _RST10H, _RETC, _EXX, _JPCNN, INAN, _CALLCNN, _IXSET, _SBCAN, _RST18H,
     _RETPO, _POPHL, _JPPONN, _EXSPHL, _CALLPONN, _PUSHHL, _ANDN, _RST20H, _RETPE, _JPHLM, _JPPENN, _EXDEHL, _CALLPENN, _MISCSET, _XORN, _RST28H,
-    _RETP, _POPAF, _JPPNN, DI, _CALLPNN, _PUSHAF, _ORN, _RST30H, _RETM, _LDSPHL, _JPMNN, _EI, _CALLMNN, _IYSET, _CPN, _RST38H, 
+    _RETP, _POPAF, _JPPNN, DI, _CALLPNN, _PUSHAF, _ORN, _RST30H, _RETM, _LDSPHL, _JPMNN, EI, _CALLMNN, _IYSET, _CPN, _RST38H, 
 }
 
 //TODO: Check address modes
@@ -146,7 +146,7 @@ pub const INSTRUCTIONS: [(Instruction, AddressMode); 0x100] = [
     (Instruction::_CALLNCNN, AddressMode::ImmediateExtended), (Instruction::_PUSHDE, AddressMode::None), 
     (Instruction::SUBN, AddressMode::Immediate), (Instruction::_RST10H, AddressMode::None),
     (Instruction::_RETC, AddressMode::None), (Instruction::_EXX, AddressMode::None), 
-    (Instruction::_JPCNN, AddressMode::ImmediateExtended), (Instruction::_INAN, AddressMode::None),
+    (Instruction::_JPCNN, AddressMode::ImmediateExtended), (Instruction::INAN, AddressMode::Immediate),
     (Instruction::_CALLCNN, AddressMode::ImmediateExtended), (Instruction::_IXSET, AddressMode::None), 
     (Instruction::_SBCAN, AddressMode::Immediate), (Instruction::_RST18H, AddressMode::None),
     (Instruction::_RETPO, AddressMode::None), (Instruction::_POPHL, AddressMode::None), 
@@ -162,7 +162,7 @@ pub const INSTRUCTIONS: [(Instruction, AddressMode); 0x100] = [
     (Instruction::_CALLPNN, AddressMode::ImmediateExtended), (Instruction::_PUSHAF, AddressMode::None), 
     (Instruction::_ORN, AddressMode::Immediate), (Instruction::_RST30H, AddressMode::None),
     (Instruction::_RETM, AddressMode::None), (Instruction::_LDSPHL, AddressMode::None), 
-    (Instruction::_JPMNN, AddressMode::ImmediateExtended), (Instruction::_EI, AddressMode::None),
+    (Instruction::_JPMNN, AddressMode::ImmediateExtended), (Instruction::EI, AddressMode::None),
     (Instruction::_CALLMNN, AddressMode::ImmediateExtended), (Instruction::_IYSET, AddressMode::None), 
     (Instruction::_CPN, AddressMode::Immediate), (Instruction::_RST38H, AddressMode::None),
 ];

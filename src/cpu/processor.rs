@@ -1,13 +1,15 @@
 use crate::instruction::implementation::process_instruction;
-use crate::instruction::set::{AddressMode, RegisterPair, INSTRUCTIONS};
+use crate::instruction::set::{Instruction, AddressMode, RegisterPair, INSTRUCTIONS};
 
 use crate::memory::Memory;
+use crate::io::handler::IoHandler;
 
 use inline_colorization::*;
 
 ///Define CPU fields
 #[derive(Default, Clone)]
 pub struct Processor {
+    pub halted: bool,
     pub a: u8, pub f: u8,
     pub b: u8, pub c: u8,
     pub d: u8, pub e: u8,
@@ -17,7 +19,8 @@ pub struct Processor {
     pub iy: u16,
     pub sp: u16,
     pub pc: u16,
-    pub halted: bool,
+    pub iff1: bool, 
+    pub iff2: bool,
 }
 
 ///CPU implementation
@@ -64,16 +67,14 @@ impl Processor {
     }
 
     ///Run program from memory
-    pub fn run(mut self, mut memory: Memory, org: u16) {
+    pub fn run(mut self, mut memory: Memory, mut io: IoHandler, org: u16) {
         self.pc = org;
 
         loop {
-            if self.halted { continue; }
-
             let opcode: u8 = memory.read(self.pc);
             let mut operand: Vec<u8> = Vec::new();
     
-            let (instruction, address_mode) = &INSTRUCTIONS[opcode as usize];
+            let (mut instruction, address_mode) = &INSTRUCTIONS[opcode as usize];
             match *address_mode {
                 AddressMode::Immediate => { 
                     operand.push(memory.read(self.pc + 1));
@@ -84,34 +85,43 @@ impl Processor {
                 },
                 _ => { }
             }
+
+            if self.halted { instruction = Instruction::NOP };
             
             let cpu_cloned: Processor = self.clone();
-            let result: String = process_instruction(&mut self, &mut memory, *instruction, operand).0;
+            let result: String = process_instruction(&mut self, &mut memory, &mut io, instruction, operand).0;
 
-            println!("{color_cyan} {}", result);
+            //Check for interrupt
+            //if self.iff1 {}
 
-            print!("{color_white} A: {:#04X} > {:#04X} |", cpu_cloned.a, self.a);
-            println!("{color_white} F: {:#010b} > {:#010b}", cpu_cloned.f, self.f);
+            if !cpu_cloned.halted {
+                println!("{color_cyan} {}", result);
 
-            print!("{color_white} B: {:#04X} > {:#04X} |", cpu_cloned.b, self.b);
-            println!("{color_white} C: {:#04X} > {:#04X}", cpu_cloned.c, self.c);
+                print!("{color_white} A: {:#04X} > {:#04X} |", cpu_cloned.a, self.a);
+                println!("{color_white} F: {:#010b} > {:#010b}", cpu_cloned.f, self.f);
 
-            print!("{color_white} D: {:#04X} > {:#04X} |", cpu_cloned.d, self.d);
-            println!("{color_white} E: {:#04X} > {:#04X}", cpu_cloned.e, self.e);
+                print!("{color_white} B: {:#04X} > {:#04X} |", cpu_cloned.b, self.b);
+                println!("{color_white} C: {:#04X} > {:#04X}", cpu_cloned.c, self.c);
 
-            print!("{color_white} H: {:#04X} > {:#04X} |", cpu_cloned.h, self.h);
-            println!("{color_white} L: {:#04X} > {:#04X}", cpu_cloned.l, self.l);
+                print!("{color_white} D: {:#04X} > {:#04X} |", cpu_cloned.d, self.d);
+                println!("{color_white} E: {:#04X} > {:#04X}", cpu_cloned.e, self.e);
 
-            print!("{color_white} I: {:#04X} > {:#04X} |", cpu_cloned.i, self.i);
-            println!("{color_white} R: {:#04X} > {:#04X}", cpu_cloned.r, self.r);
+                print!("{color_white} H: {:#04X} > {:#04X} |", cpu_cloned.h, self.h);
+                println!("{color_white} L: {:#04X} > {:#04X}", cpu_cloned.l, self.l);
 
-            println!("{color_white} IX: {:#06X} > {:#06X}", cpu_cloned.ix, self.ix);
-            println!("{color_white} IY: {:#06X} > {:#06X}\n", cpu_cloned.iy, self.iy);
+                print!("{color_white} I: {:#04X} > {:#04X} |", cpu_cloned.i, self.i);
+                println!("{color_white} R: {:#04X} > {:#04X}", cpu_cloned.r, self.r);
 
-            println!("{color_white} SP: {:#06X} > {:#06X}", cpu_cloned.sp, self.sp);
-            println!("{color_white} PC: {:#06X} > {:#06X}", cpu_cloned.pc, self.pc);
+                println!("{color_white} IX: {:#06X} > {:#06X}", cpu_cloned.ix, self.ix);
+                println!("{color_white} IY: {:#06X} > {:#06X}\n", cpu_cloned.iy, self.iy);
 
-            println!("{color_reset}{style_reset}\n");
+                println!("{color_white} SP: {:#06X} > {:#06X}", cpu_cloned.sp, self.sp);
+                println!("{color_white} PC: {:#06X} > {:#06X}\n", cpu_cloned.pc, self.pc);
+
+                if self.halted { println!("\n{color_red} CPU HALTED"); }
+
+                println!("{color_reset}{style_reset}");
+            }
         }
     }
 }
