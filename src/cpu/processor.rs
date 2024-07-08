@@ -1,5 +1,5 @@
 use crate::instruction::implementation::process_instruction;
-use crate::instruction::set::{Instruction, AddressMode, RegisterPair, INSTRUCTIONS};
+use crate::instruction::set::{AddressMode, Flag, Instruction, RegisterPair, INSTRUCTIONS};
 
 use crate::memory::Memory;
 use crate::io::handler::IoHandler;
@@ -53,17 +53,17 @@ impl Processor {
     }
 
     ///Set flag value
-    pub fn set_flag(&mut self, position: usize, value: bool) {
+    pub fn set_flag(&mut self, flag: Flag, value: bool) {
         if value {
-            self.f |= 1 << position;
+            self.f |= 1 << flag as usize;
         } else {
-            self.f &= !(1 << position);
+            self.f &= !(1 << flag as usize);
         }
     }
 
     ///Get flag value
-    pub fn get_flag(&self, position: usize) -> bool {
-        (self.f & (1 << position)) != 0
+    pub fn get_flag(&self, flag: Flag) -> bool {
+        (self.f & (1 << flag as usize)) != 0
     }
 
     ///Run program from memory

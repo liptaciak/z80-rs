@@ -1,10 +1,15 @@
-///Possible register pairs
+///Register pairs
 #[derive(Copy, Clone)]
 pub enum RegisterPair {
     BC, DE, HL,
 }
 
-///Possible address modes
+//Flags
+pub enum Flag {
+    C, N, PV, F3, H, F5, Z, S,
+}
+
+///Address modes
 #[derive(Copy, Clone)]
 pub enum AddressMode {
     None,
@@ -15,7 +20,7 @@ pub enum AddressMode {
 }
 
 ///Main instruction set
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum Instruction {
     NOP, LDBCNN, _LDMBCA, _INCBC, INCB, DECB, LDBN, _RLCA, _EXAFAF, _ADDHLBC, _LDABCM, _DECBC, _INCC, _DECC, _LDCN, _RRCA,
     _DJNZD, LDDENN, _LDMDEA, _INCDE, _INCD, _DECD, _LDDN, _RLA, _JRD, _ADDHLDE, _LDADEM, _DECDE, _INCE, _DECE, _LDEN, _RRA,
@@ -25,14 +30,14 @@ pub enum Instruction {
     _LDDB, _LDDC, _LDDD, _LDDE, _LDDH, _LDDL, _LDDHLM, _LDDA, _LDEB, _LDEC, _LDED, _LDEE, _LDEH, _LDEL, _LDEHLM, _LDEA,
     _LDHB, _LDHC, _LDHD, _LDHE, _LDHH, _LDHL, _LDHHLM, _LDHA, _LDLB, _LDLC, _LDLD, _LDLE, _LDLH, _LDLL, _LDLHLM, _LDLA,
     _LDMHLB, _LDMHLC, _LDMHLD, _LDMHLE, _LDMHLH, _LDMHLL, HALT, _LDMHLA, _LDAB, _LDAC, _LDAD, _LDAE, _LDAH, _LDAL, _LDAHLM, _LDAA,
-    _ADDAB, _ADDAC, _ADDAD, _ADDAE, _ADDAH, _ADDAL, _ADDAHLM, _ADDAA, _ADCAB, _ADCAC, _ADCAD, _ADCAE, _ADCAH, _ADCAL, _ADCAHLM, _ADCAA,
+    _ADDAB, _ADDAC, _ADDAD, _ADDAE, _ADDAH, _ADDAL, _ADDAHLM, _ADDAA, _ADCAB, ADCAC, _ADCAD, _ADCAE, _ADCAH, _ADCAL, _ADCAHLM, _ADCAA,
     _SUBB, _SUBC, _SUBD, _SUBE, _SUBH, _SUBL, _SUBMHL, _SUBA, _SBCAB, _SBCAC, _SBCAD, _SBCAE, _SBCAH, _SBCAL, _SBCAHLM, _SBCAA,
     _ANDB, _ANDC, _ANDD, _ANDE, _ANDH, _ANDL, _ANDHLM, _ANDA, _XORB, _XORC, _XORD, _XORE, _XORH, _XORL, _XORHLM, _XORA,
     _ORB, _ORC, _ORD, _ORE, _ORH, _ORL, _ORHLM, _ORA, CPB, _CPC, _CPD, _CPE, _CPH, _CPLR, _CPHLM, _CPA,
-    _RETNZ, _POPBC, _JPNZNN, JPNN, _CALLNZNN, _PUSHBC, ADDAN, _RST00H, _RETZ, RET, _JPZNN, _BITSET, _CALLZNN, CALLNN, _ADCAN, _RST08H,
+    _RETNZ, _POPBC, _JPNZNN, JPNN, _CALLNZNN, _PUSHBC, ADDAN, _RST00H, _RETZ, RET, JPZNN, _BITSET, _CALLZNN, CALLNN, _ADCAN, _RST08H,
     _RETNC, _POPDE, _JPNCNN, OUTNA, _CALLNCNN, _PUSHDE, SUBN, _RST10H, _RETC, _EXX, _JPCNN, INAN, _CALLCNN, _IXSET, _SBCAN, _RST18H,
     _RETPO, _POPHL, _JPPONN, _EXSPHL, _CALLPONN, _PUSHHL, _ANDN, _RST20H, _RETPE, _JPHLM, _JPPENN, _EXDEHL, _CALLPENN, _MISCSET, _XORN, _RST28H,
-    _RETP, _POPAF, _JPPNN, DI, _CALLPNN, _PUSHAF, _ORN, _RST30H, _RETM, _LDSPHL, _JPMNN, EI, _CALLMNN, _IYSET, _CPN, _RST38H, 
+    _RETP, _POPAF, _JPPNN, DI, _CALLPNN, _PUSHAF, _ORN, _RST30H, _RETM, _LDSPHL, _JPMNN, EI, _CALLMNN, _IYSET, CPN, _RST38H, 
 }
 
 //TODO: Check address modes
@@ -105,7 +110,7 @@ pub const INSTRUCTIONS: [(Instruction, AddressMode); 0x100] = [
     (Instruction::_ADDAD, AddressMode::None), (Instruction::_ADDAE, AddressMode::None),
     (Instruction::_ADDAH, AddressMode::None), (Instruction::_ADDAL, AddressMode::None), 
     (Instruction::_ADDAHLM, AddressMode::None), (Instruction::_ADDAA, AddressMode::None),
-    (Instruction::_ADCAB, AddressMode::None), (Instruction::_ADCAC, AddressMode::None), 
+    (Instruction::_ADCAB, AddressMode::None), (Instruction::ADCAC, AddressMode::None), 
     (Instruction::_ADCAD, AddressMode::None), (Instruction::_ADCAE, AddressMode::None),
     (Instruction::_ADCAH, AddressMode::None), (Instruction::_ADCAL, AddressMode::None), 
     (Instruction::_ADCAHLM, AddressMode::None), (Instruction::_ADCAA, AddressMode::None),
@@ -138,7 +143,7 @@ pub const INSTRUCTIONS: [(Instruction, AddressMode); 0x100] = [
     (Instruction::_CALLNZNN, AddressMode::ImmediateExtended), (Instruction::_PUSHBC, AddressMode::None), 
     (Instruction::ADDAN, AddressMode::Immediate), (Instruction::_RST00H, AddressMode::None),
     (Instruction::_RETZ, AddressMode::None), (Instruction::RET, AddressMode::None), 
-    (Instruction::_JPZNN, AddressMode::ImmediateExtended), (Instruction::_BITSET, AddressMode::None),
+    (Instruction::JPZNN, AddressMode::ImmediateExtended), (Instruction::_BITSET, AddressMode::None),
     (Instruction::_CALLZNN, AddressMode::ImmediateExtended), (Instruction::CALLNN, AddressMode::Extended), 
     (Instruction::_ADCAN, AddressMode::Immediate), (Instruction::_RST08H, AddressMode::None),
     (Instruction::_RETNC, AddressMode::None), (Instruction::_POPDE, AddressMode::None), 
@@ -164,5 +169,5 @@ pub const INSTRUCTIONS: [(Instruction, AddressMode); 0x100] = [
     (Instruction::_RETM, AddressMode::None), (Instruction::_LDSPHL, AddressMode::None), 
     (Instruction::_JPMNN, AddressMode::ImmediateExtended), (Instruction::EI, AddressMode::None),
     (Instruction::_CALLMNN, AddressMode::ImmediateExtended), (Instruction::_IYSET, AddressMode::None), 
-    (Instruction::_CPN, AddressMode::Immediate), (Instruction::_RST38H, AddressMode::None),
+    (Instruction::CPN, AddressMode::Immediate), (Instruction::_RST38H, AddressMode::None),
 ];

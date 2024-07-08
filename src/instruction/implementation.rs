@@ -2,7 +2,7 @@ use crate::cpu::processor::Processor;
 use crate::memory::Memory;
 
 use crate::io::handler::IoHandler;
-use crate::instruction::set::{Instruction, RegisterPair};
+use crate::instruction::set::{Flag, Instruction, RegisterPair};
 
 ///Executes a single instruction.
 pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut IoHandler, instruction: Instruction, operand: Vec<u8>) -> (String, Processor, Memory) {
@@ -23,42 +23,42 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
             str = String::from("LD BC, NN 0x01");
         },
         Instruction::INCB => {
-            cpu.set_flag(2, false);
-            if cpu.b == 0x7F { cpu.set_flag(2, true); } //P/V Flag
+            cpu.set_flag(Flag::PV, false);
+            if cpu.b == 0x7F { cpu.set_flag(Flag::PV, true); }
 
-            cpu.set_flag(4, false);
-            if (cpu.b & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
+            cpu.set_flag(Flag::H, false);
+            if (cpu.b & 0x0F) == 0b1111 { cpu.set_flag(Flag::H, true); }
 
             cpu.b = cpu.b.wrapping_add(1);
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            cpu.set_flag(6, false);
-            if cpu.b == 0x00 { cpu.set_flag(6, true); } //Z Flag
+            cpu.set_flag(Flag::Z, false);
+            if cpu.b == 0x00 { cpu.set_flag(Flag::Z, true); }
 
-            cpu.set_flag(7, false);
-            if cpu.b > 0x7F { cpu.set_flag(7, true); } //S Flag
+            cpu.set_flag(Flag::S, false);
+            if cpu.b > 0x7F { cpu.set_flag(Flag::S, true); }
 
-            cpu.set_flag(1, false); //N Flag
+            cpu.set_flag(Flag::N, false);
 
             str = String::from("INC B 0x04");
         },
         Instruction::DECB => {
-            cpu.set_flag(2, false);
-            if cpu.b == 0x80 { cpu.set_flag(2, true); } //P/V Flag
+            cpu.set_flag(Flag::PV, false);
+            if cpu.b == 0x80 { cpu.set_flag(Flag::PV, true); }
 
-            cpu.set_flag(4, false);
-            if (cpu.b & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
+            cpu.set_flag(Flag::H, false);
+            if (cpu.b & 0x0F) == 0b0000 { cpu.set_flag(Flag::H, true); }
 
             cpu.b = cpu.b.wrapping_sub(1);
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            cpu.set_flag(7, false);
-            if cpu.b > 0x7F { cpu.set_flag(7, true); } //S Flag
+            cpu.set_flag(Flag::S, false);
+            if cpu.b > 0x7F { cpu.set_flag(Flag::S, true); }
 
-            cpu.set_flag(6, false);
-            if cpu.b == 0x00 { cpu.set_flag(6, true); } //Z Flag
+            cpu.set_flag(Flag::Z, false);
+            if cpu.b == 0x00 { cpu.set_flag(Flag::Z, true); }
 
-            cpu.set_flag(1, true); //N Flag
+            cpu.set_flag(Flag::N, true);
 
             str = String::from("DEC B 0x05");
         },
@@ -103,7 +103,7 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
             str = String::from("INC HL 0x23");
         },
         Instruction::JRZD => {
-            if cpu.get_flag(6) { //Z Flag
+            if cpu.get_flag(Flag::Z) {
                 let result: u16 = operand[0] as u16 + 2;
                 cpu.pc = cpu.pc.wrapping_add(result);
             } else {
@@ -145,26 +145,50 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
 
             str = String::from("HALT 0x76");
         },
+        Instruction::ADCAC => {
+            cpu.set_flag(Flag::PV, false);
+            if cpu.a == 0x7F { cpu.set_flag(Flag::PV, true); }
+
+            cpu.set_flag(Flag::H, false);
+            if (cpu.a & 0x0F) == 0b1111 { cpu.set_flag(Flag::H, true); }
+
+            if (cpu.a.wrapping_add(cpu.c + cpu.get_flag(Flag::C) as u8) as u16) > 0xFF {
+                cpu.set_flag(Flag::C, true);
+            }
+
+            cpu.a = cpu.a.wrapping_add(cpu.c + cpu.get_flag(Flag::C) as u8);
+            cpu.pc = cpu.pc.wrapping_add(1);
+
+            cpu.set_flag(Flag::Z, false);
+            if cpu.a == 0x00 { cpu.set_flag(Flag::Z, true); }
+
+            cpu.set_flag(Flag::S, false);
+            if cpu.a > 0x7F { cpu.set_flag(Flag::S, true); }
+
+            cpu.set_flag(Flag::N, false);
+
+            str = String::from("ADC A, C 0x89");
+        },
         Instruction::CPB => {
-            cpu.set_flag(2, false);
-            if cpu.a == 0x80 { cpu.set_flag(2, true); } //P/V Flag
+            cpu.set_flag(Flag::PV, false);
+            if cpu.a == 0x80 { cpu.set_flag(Flag::PV, true); }
 
-            cpu.set_flag(4, false);
-            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
+            cpu.set_flag(Flag::H, false);
+            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(Flag::H, true); }
 
-            if cpu.a < cpu.b { cpu.set_flag(0, true); } //C Flag
+            if cpu.a < cpu.b { cpu.set_flag(Flag::C, true); }
 
             let result: u8 = cpu.a.wrapping_sub(cpu.b);
 
-            cpu.set_flag(7, false);
-            if result > 0x7F { cpu.set_flag(7, true); } //S Flag
+            cpu.set_flag(Flag::S, false);
+            if result > 0x7F { cpu.set_flag(Flag::S, true); }
 
-            cpu.set_flag(6, false);
-            if result == 0x00 { cpu.set_flag(6, true); } //Z Flag
+            cpu.set_flag(Flag::Z, false);
+            if result == 0x00 { cpu.set_flag(Flag::Z, true); }
 
             cpu.pc = cpu.pc.wrapping_add(1);
 
-            cpu.set_flag(1, true); //N Flag
+            cpu.set_flag(Flag::N, true);
 
             str = String::from("CP B 0xB8");
         },
@@ -175,26 +199,26 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
             str = String::from("JP NN 0xC3");
         },
         Instruction::ADDAN => {
-            cpu.set_flag(2, false);
-            if cpu.a == 0x7F { cpu.set_flag(2, true); } //P/V Flag
+            cpu.set_flag(Flag::PV, false);
+            if cpu.a == 0x7F { cpu.set_flag(Flag::PV, true); }
 
-            cpu.set_flag(4, false);
-            if (cpu.a & 0x0F) == 0b1111 { cpu.set_flag(4, true); } //H Flag
+            cpu.set_flag(Flag::H, false);
+            if (cpu.a & 0x0F) == 0b1111 { cpu.set_flag(Flag::H, true); }
 
             if (cpu.a.wrapping_add(operand[0]) as u16) > 0xFF {
-                cpu.set_flag(0, true); //C Flag
+                cpu.set_flag(Flag::C, true);
             }
 
             cpu.a = cpu.a.wrapping_add(operand[0]);
             cpu.pc = cpu.pc.wrapping_add(2);
 
-            cpu.set_flag(6, false);
-            if cpu.a == 0x00 { cpu.set_flag(6, true); } //Z Flag
+            cpu.set_flag(Flag::Z, false);
+            if cpu.a == 0x00 { cpu.set_flag(Flag::Z, true); }
 
-            cpu.set_flag(7, false);
-            if cpu.a > 0x7F { cpu.set_flag(7, true); } //S Flag
+            cpu.set_flag(Flag::S, false);
+            if cpu.a > 0x7F { cpu.set_flag(Flag::S, true); }
 
-            cpu.set_flag(1, false); //N Flag
+            cpu.set_flag(Flag::N, false);
 
             str = String::from("ADD A, N 0xC6");
         },
@@ -206,6 +230,17 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
             cpu.sp = cpu.sp.wrapping_add(2);
         
             str = String::from("RET 0xC9");
+        },
+        Instruction::JPZNN => {
+            let address: u16 = ((operand[1] as u16) << 8) | (operand[0] as u16);
+
+            if cpu.get_flag(Flag::Z) { 
+                cpu.pc = address; 
+            } else {
+                cpu.pc = cpu.pc.wrapping_add(3);
+            }
+
+            str = String::from("JP Z, NN 0xCA");
         },
         Instruction::CALLNN => {
             cpu.pc = cpu.pc.wrapping_add(3);
@@ -227,24 +262,24 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
             str = String::from("OUT N, A 0xD3");
         },
         Instruction::SUBN => {
-            cpu.set_flag(2, false);
-            if cpu.a == 0x80 { cpu.set_flag(2, true); } //P/V Flag
+            cpu.set_flag(Flag::PV, false);
+            if cpu.a == 0x80 { cpu.set_flag(Flag::PV, true); }
 
-            cpu.set_flag(4, false);
-            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(4, true); } //H Flag
+            cpu.set_flag(Flag::H, false);
+            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(Flag::H, true); }
 
-            if cpu.a < operand[0] { cpu.set_flag(0, true); } //C Flag
+            if cpu.a < operand[0] { cpu.set_flag(Flag::C, true); }
 
             cpu.a = cpu.a.wrapping_sub(operand[0]);
             cpu.pc = cpu.pc.wrapping_add(2);
 
-            cpu.set_flag(7, false);
-            if cpu.a > 0x7F { cpu.set_flag(7, true); } //S Flag
+            cpu.set_flag(Flag::S, false);
+            if cpu.a > 0x7F { cpu.set_flag(Flag::S, true); }
 
-            cpu.set_flag(6, false);
-            if cpu.a == 0x00 { cpu.set_flag(6, true); } //Z Flag
+            cpu.set_flag(Flag::Z, false);
+            if cpu.a == 0x00 { cpu.set_flag(Flag::Z, true); }
 
-            cpu.set_flag(1, true); //N Flag
+            cpu.set_flag(Flag::N, true);
 
             str = String::from("SUB A, N 0xD6");
         },
@@ -270,9 +305,30 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
 
             str = String::from("EI 0xFB");
         },
+        Instruction::CPN => {
+            cpu.set_flag(Flag::PV, false);
+            if cpu.a == 0x80 { cpu.set_flag(Flag::PV, true); }
 
-        #[allow(unreachable_patterns)]
-        _ => panic!("Instruction not implemented."),
+            cpu.set_flag(Flag::H, false);
+            if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(Flag::H, true); }
+
+            if cpu.a < cpu.b { cpu.set_flag(Flag::C, true); }
+
+            let result: u8 = cpu.a.wrapping_sub(operand[0]);
+
+            cpu.set_flag(Flag::S, false);
+            if result > 0x7F { cpu.set_flag(Flag::S, true); }
+
+            cpu.set_flag(Flag::Z, false);
+            if result == 0x00 { cpu.set_flag(Flag::Z, true); }
+
+            cpu.pc = cpu.pc.wrapping_add(1);
+
+            cpu.set_flag(Flag::N, true);
+
+            str = String::from("CP N 0xFE");
+        },
+        _ => panic!("Instruction {:?} not implemented.", instruction),
     }
 
     (str, cpu.to_owned(), memory.to_owned())
