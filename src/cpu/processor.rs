@@ -6,6 +6,8 @@ use crate::io::handler::IoHandler;
 
 use inline_colorization::*;
 
+//Debug use std::{thread, time};
+
 ///Define CPU fields
 #[derive(Default, Clone)]
 pub struct Processor {
@@ -68,6 +70,8 @@ impl Processor {
 
     ///Run program from memory
     pub fn run(mut self, mut memory: Memory, mut io: IoHandler, org: u16) {
+        //Debug let time_sleep = time::Duration::from_millis(500);
+
         self.pc = org;
 
         loop {
@@ -122,6 +126,8 @@ impl Processor {
 
                 println!("{color_reset}{style_reset}");
             }
+
+            //Debug thread::sleep(time_sleep);
         }
     }
 }
