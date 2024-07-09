@@ -6,7 +6,7 @@ use crate::io::handler::IoHandler;
 
 use inline_colorization::*;
 
-//Debug use std::{thread, time};
+use std::{thread, time};
 
 ///Define CPU fields
 #[derive(Default, Clone)]
@@ -70,7 +70,7 @@ impl Processor {
 
     ///Run program from memory
     pub fn run(mut self, mut memory: Memory, mut io: IoHandler, org: u16) {
-        //Debug let time_sleep = time::Duration::from_millis(500);
+        let time_sleep = time::Duration::from_millis(500);
 
         self.pc = org;
 
@@ -93,13 +93,19 @@ impl Processor {
             if self.halted { instruction = Instruction::NOP };
             
             let cpu_cloned: Processor = self.clone();
-            let result: String = process_instruction(&mut self, &mut memory, &mut io, instruction, operand).0;
+            let result: String = process_instruction(&mut self, &mut memory, &mut io, instruction, operand.clone()).0;
 
             //Check for interrupt
             //if self.iff1 {}
 
+
             if !cpu_cloned.halted {
-                println!("{color_cyan} {}", result);
+                let mut operands: u16 = 0;
+
+                if operand.len() == 2 { operands = ((operand[1] as u16) << 8) | (operand[0] as u16); }
+                else if operand.len() == 1 { operands = operand[0] as u16; }
+
+                println!("{color_cyan} {} | {:#06X}", result, operands);
 
                 print!("{color_white} A: {:#04X} > {:#04X} |", cpu_cloned.a, self.a);
                 println!("{color_white} F: {:#010b} > {:#010b}", cpu_cloned.f, self.f);
@@ -127,7 +133,7 @@ impl Processor {
                 println!("{color_reset}{style_reset}");
             }
 
-            //Debug thread::sleep(time_sleep);
+            thread::sleep(time_sleep);
         }
     }
 }

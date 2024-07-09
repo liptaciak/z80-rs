@@ -191,6 +191,25 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
 
             str = String::from("ADC A, C 0x89");
         },
+        Instruction::ORE => {
+            cpu.set_flag(Flag::PV, false);
+            if cpu.a <= 0x7F && cpu.e > (0x80 as u8).wrapping_sub(cpu.a) { cpu.set_flag(Flag::PV, true); }
+
+            cpu.a = cpu.a.wrapping_add(cpu.e);
+            cpu.pc = cpu.pc.wrapping_add(2);
+
+            cpu.set_flag(Flag::Z, false);
+            if cpu.a == 0x00 { cpu.set_flag(Flag::Z, true); }
+
+            cpu.set_flag(Flag::S, false);
+            if cpu.a > 0x7F { cpu.set_flag(Flag::S, true); }
+
+            cpu.set_flag(Flag::H, false);
+            cpu.set_flag(Flag::N, false);
+            cpu.set_flag(Flag::C, false);
+
+            str = String::from("OR E 0xB3");
+        },
         Instruction::CPB => {
             cpu.set_flag(Flag::PV, false);
             if cpu.a >= 0x80 && cpu.b > cpu.a.wrapping_sub(0x7F) { cpu.set_flag(Flag::PV, true); }
@@ -361,7 +380,7 @@ pub fn process_instruction(cpu: &mut Processor, memory: &mut Memory, io: &mut Io
             cpu.set_flag(Flag::H, false);
             if (cpu.a & 0x0F) == 0b0000 { cpu.set_flag(Flag::H, true); }
 
-            if cpu.a < cpu.b { cpu.set_flag(Flag::C, true); }
+            if cpu.a < operand[0] { cpu.set_flag(Flag::C, true); }
 
             let result: u8 = cpu.a.wrapping_sub(operand[0]);
 
