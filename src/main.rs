@@ -14,8 +14,8 @@ fn main() {
                 .index(1),
         )
         .arg(
-            Arg::new("org")
-                .help("The origin address.")
+            Arg::new("start")
+                .help("The start address of the program.")
                 .required(false)
                 .index(2),
         )
@@ -25,22 +25,22 @@ fn main() {
 
     //Get the file to process and load it to memory
     let file = matches.get_one::<String>("file").unwrap();
-    let org_arg = matches.get_one::<String>("org");
+    let start_arg = matches.get_one::<String>("start");
     
-    let mut org: u16 = 0x0000;
-    if !org_arg.is_none() {
-        if org_arg.unwrap().starts_with("0x") {
-            org = u16::from_str_radix(&org_arg.unwrap()[2..], 16).unwrap();
+    let mut start: u16 = 0x0000;
+    if !start_arg.is_none() {
+        if start_arg.unwrap().starts_with("0x") {
+            start = u16::from_str_radix(&start_arg.unwrap()[2..], 16).unwrap();
         } else {
-            org = org_arg.unwrap().parse::<u16>().unwrap();
+            start = start_arg.unwrap().parse::<u16>().unwrap();
         }
     }
 
     let mut memory: Memory = Memory::new();
-    memory.load_file(file.as_str(), org);
+    memory.load_file(file.as_str(), start);
 
     let io: IoHandler = IoHandler::new();
     
     //Run the program
-    cpu.run(memory, io, org);
+    cpu.run(memory, io, start);
 }

@@ -6,8 +6,6 @@ use crate::io::handler::IoHandler;
 
 use inline_colorization::*;
 
-use std::{thread, time};
-
 ///Define CPU fields
 #[derive(Default, Clone)]
 pub struct Processor {
@@ -69,10 +67,8 @@ impl Processor {
     }
 
     ///Run program from memory
-    pub fn run(mut self, mut memory: Memory, mut io: IoHandler, org: u16) {
-        let time_sleep = time::Duration::from_millis(500);
-
-        self.pc = org;
+    pub fn run(mut self, mut memory: Memory, mut io: IoHandler, start: u16) {
+        self.pc = start;
 
         loop {
             let opcode: u8 = memory.read(self.pc);
@@ -97,7 +93,6 @@ impl Processor {
 
             //Check for interrupt
             //if self.iff1 {}
-
 
             if !cpu_cloned.halted {
                 let mut operands: u16 = 0;
@@ -132,8 +127,6 @@ impl Processor {
 
                 println!("{color_reset}{style_reset}");
             }
-
-            thread::sleep(time_sleep);
         }
     }
 }

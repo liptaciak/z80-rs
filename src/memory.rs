@@ -12,12 +12,14 @@ lazy_static! { static ref MEMORY: RwLock<[u8; MEMORY_SIZE]> = RwLock::new([0; ME
 impl Memory {
     pub fn new() -> Self { Memory {} }
 
-    pub fn load_file(&mut self, file: &str, org: u16) {
+    pub fn load_file(&mut self, file: &str, start: u16) {
         let program: Vec<u8> = fs::read(file)
             .expect("Not able to read the file.");
 
-        for (i, byte) in program.iter().enumerate() {
-            self.write(org + (i as u16), *byte);
+        let mut i: u16 = 0;
+        for byte in program.iter() {
+            self.write(i + start, *byte);
+            i += 1;
         }
     }
 
